@@ -1,0 +1,117 @@
+/* @Toolbars */
+.editor-toolbar {
+  display:block;
+  margin:0 1px 10px;
+  height:20px;
+  line-height:20px;
+  font-size:14px;
+  overflow:hidden;
+}
+.editor-toolbar a {
+  display:block;
+  float:left;
+  background-color:#3c3c3c;
+  color:#87ceeb;
+  text-decoration:none !important;
+  width:20px;
+  height:inherit;
+  text-align:center;
+  margin:0 4px 0 0;
+}
+.editor-toolbar a:active {background-color:#252525}
+.morfy-dashboard a:focus,
+.morfy-dashboard a:hover {color:#c1e8f7}
+
+/* @Custom prompt */
+.custom-modal-overlay {
+  position:fixed !important;
+  position:absolute;
+  top:0;
+  right:0;
+  bottom:0;
+  left:0;
+  z-index:9999;
+  background-color:#252525;
+  background-color:rgba(37,37,37,.4);
+}
+.custom-modal {
+  position:fixed !important;
+  position:absolute;
+  top:20%;
+  left:50%;
+  z-index:9999;
+  width:250px;
+  background-color:#333;
+  border:1px solid #3c3c3c;
+  color:#aaa;
+  padding:10px;
+  margin-left:-126px;
+  -webkit-box-shadow:0 1px 3px black;
+  -moz-box-shadow:0 1px 3px black;
+  box-shadow:0 1px 3px black;
+}
+.custom-modal-header {
+  margin:-10px -10px 0;
+  padding:10px 10px 0;
+  font-weight:bold;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.custom-modal-content {margin:10px 0 20px}
+.custom-modal-content input {
+  -webkit-box-sizing:border-box;
+  -moz-box-sizing:border-box;
+  box-sizing:border-box;
+  display:block;
+  width:100%;
+}
+.custom-modal-action {text-align:center}
+.custom-prompt input {
+  display:block;
+  padding:4px;
+  margin:0;
+  background-color:#252525;
+  border:1px solid #3c3c3c;
+  width:100%;
+  font:inherit;
+  color:white;
+  -webkit-box-sizing:border-box;
+  -moz-box-sizing:border-box;
+  box-sizing:border-box;
+  text-shadow:none;
+  -webkit-box-shadow:inset 0 1px 3px rgba(0,0,0,.7);
+  -moz-box-shadow:inset 0 1px 3px rgba(0,0,0,.7);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.7);
+}
+.custom-modal button {
+  font:inherit;
+  text-shadow:none;
+  background-color:#aaa;
+  border:1px solid #bbb;
+  font-weight:bold;
+  color:#333;
+  padding:4px 10px;
+  -webkit-box-shadow:0 1px 3px rgba(0,0,0,.7);
+  -moz-box-shadow:0 1px 3px rgba(0,0,0,.7);
+  box-shadow:0 1px 3px rgba(0,0,0,.7);
+  cursor:pointer;
+}
+.custom-modal button::-moz-focus-inner {
+  margin:0;
+  padding:0;
+  border:none;
+  outline:none;
+}
+
+
+/* Uncomment the CSS below if you do not want to use icon fonts */
+
+/*
+.editor-toolbar a {width:auto}
+.editor-toolbar a i {display:none}
+.editor-toolbar a:after {
+  content:attr(title);
+  font-weight:bold;
+}
+*/
