@@ -19,8 +19,6 @@
   margin:0 4px 0 0;
 }
 .editor-toolbar a:active {background-color:#252525}
-.morfy-dashboard a:focus,
-.morfy-dashboard a:hover {color:#c1e8f7}
 
 /* @Custom prompt */
 .custom-modal-overlay {
