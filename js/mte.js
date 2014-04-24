@@ -24,7 +24,7 @@ var MTE = function(elem, o) {
             toolbar: true,
             toolbarClass: 'editor-toolbar',
             toolbarPosition: "before", // "before" or "after" textarea?
-            appendModalTo: document.body,
+            appendModalTo: doc.body,
             iconClassPrefix: 'fa fa-', // For `<i class="fa fa-ICON_NAME"></i>`
             buttons: {
                 OK: 'OK',
@@ -70,7 +70,7 @@ var MTE = function(elem, o) {
             click: function() {
                 var v = editor.selection().value;
                 if (v.indexOf('\n') !== -1 && v.length > 0) {
-                    editor.indent(defaults.tabSize);
+                    editor.indent(opt.tabSize);
                 } else {
                     editor.toggle('`', '`');
                 }
@@ -92,10 +92,10 @@ var MTE = function(elem, o) {
             title: 'Link',
             click: function() {
                 var s = editor.selection(),
-                    title, url, placeholder = defaults.placeholder.linkText;
-                base.prompt(defaults.prompt.linkTitle_title, defaults.prompt.linkTitle, false, function(r) {
+                    title, url, placeholder = opt.placeholder.linkText;
+                base.prompt(opt.prompt.linkTitle_title, opt.prompt.linkTitle, false, function(r) {
                     title = r;
-                    base.prompt(defaults.prompt.linkURL_title, defaults.prompt.linkURL, true, function(r) {
+                    base.prompt(opt.prompt.linkURL_title, opt.prompt.linkURL, true, function(r) {
                         url = r;
                         editor.wrap('[' + (s.value.length === 0 ? placeholder : ''), '](' + url + (title !== "" ? ' \"' + title + '\"' : '') + ')', function() {
                             editor.select(s.start + 1, (s.value.length === 0 ? s.start + placeholder.length + 1 : s.end + 1), function() {
@@ -109,7 +109,7 @@ var MTE = function(elem, o) {
         'picture-o': {
             title: 'Image',
             click: function() {
-                base.prompt(defaults.prompt.imageURL_title, defaults.prompt.imageURL, true, function(r) {
+                base.prompt(opt.prompt.imageURL_title, opt.prompt.imageURL, true, function(r) {
                     var alt = decodeURIComponent(
                         r.substring(
                             r.lastIndexOf('/') + 1, r.lastIndexOf('.')
@@ -118,7 +118,7 @@ var MTE = function(elem, o) {
                         .replace(/(?:^|\s)\S/g, function(a) {
                             return a.toUpperCase();
                         });
-                    alt = alt.indexOf('/') < 0 ? alt : defaults.placeholder.imageAlt;
+                    alt = alt.indexOf('/') < 0 ? alt : opt.placeholder.imageAlt;
                     editor.insert('\n![' + alt + '](' + r + ')\n', function() {
                         editor.updateHistory();
                     });
@@ -140,7 +140,7 @@ var MTE = function(elem, o) {
                         });
                     });
                 } else {
-                    var placeholder = ' 1. ' + defaults.placeholder.listOL;
+                    var placeholder = ' 1. ' + opt.placeholder.listOL;
                     editor.insert(placeholder, function() {
                         editor.select(s.start + 4, s.start + placeholder.length);
                     });
@@ -154,7 +154,7 @@ var MTE = function(elem, o) {
                 if (s.value.length > 0) {
                     editor.indent(' * ');
                 } else {
-                    var placeholder = ' * ' + defaults.placeholder.listUL;
+                    var placeholder = ' * ' + opt.placeholder.listUL;
                     editor.insert(placeholder, function() {
                         editor.select(s.start + 3, s.start + placeholder.length);
                     });
@@ -193,103 +193,103 @@ var MTE = function(elem, o) {
         return target;
     }
 
-    defaults = extend(defaults, o);
+    var opt = extend(defaults, o);
+
+    base.modal = function(type, callback) {
+        type = type || 'modal';
+        var page = opt.appendModalTo,
+            overlay = doc.createElement('div');
+            overlay.className = 'custom-modal-overlay custom-' + type + '-overlay';
+        var modal = doc.createElement('div');
+            modal.className = 'custom-modal custom-' + type;
+            modal.innerHTML = '<div class="custom-modal-header custom-' + type + '-header"></div><div class="custom-modal-content custom-' + type + '-content"></div><div class="custom-modal-action custom-' + type + '-action"></div>';
+        page.appendChild(overlay);
+        page.appendChild(modal);
+        if (typeof callback == "function") callback(overlay, modal);
+    };
 
     // Custom prompt box
     base.prompt = function(title, value, isRequired, callback) {
-        var page = defaults.appendModalTo,
-            overlay = doc.createElement('div');
-            overlay.className = 'custom-modal-overlay custom-prompt-overlay';
-        var modal = doc.createElement('div');
-            modal.className = 'custom-modal custom-prompt';
-            modal.innerHTML = '<div class="custom-modal-header custom-prompt-header">' + (title ? title : "") + '</div><div class="custom-modal-content custom-prompt-content"></div><div class="custom-modal-action custom-prompt-action"></div>';
-        var onSuccess = function(value) {
-            overlay.parentNode.removeChild(overlay);
-            modal.parentNode.removeChild(modal);
-            if (typeof callback == "function") callback(value);
-        };
-        var input = doc.createElement('input');
-            input.type = "text";
-            input.value = value;
-            input.onkeyup = function(e) {
-                if (isRequired) {
-                    if (e.keyCode == 13 && this.value !== "" && this.value !== value) onSuccess(this.value);
-                } else {
-                    if (e.keyCode == 13) onSuccess(this.value == value ? "" : this.value);
-                }
+        base.modal('prompt', function(o, m) {
+            var onSuccess = function(value) {
+                o.parentNode.removeChild(o);
+                m.parentNode.removeChild(m);
+                if (typeof callback == "function") callback(value);
             };
-        var OK = doc.createElement('button');
-            OK.innerHTML = defaults.buttons.OK;
-            OK.onclick = function() {
-                if (isRequired) {
-                    if (input.value !== "" && input.value !== value) onSuccess(input.value);
-                } else {
-                    onSuccess(input.value == value ? "" : input.value);
-                }
-            };
-        var CANCEL = doc.createElement('button');
-            CANCEL.innerHTML = defaults.buttons.CANCEL;
-            CANCEL.onclick = function() {
-                overlay.parentNode.removeChild(overlay);
-                modal.parentNode.removeChild(modal);
-            };
-        page.appendChild(overlay);
-        page.appendChild(modal);
-        modal.children[1].appendChild(input);
-        modal.children[2].appendChild(OK);
-        modal.children[2].appendChild(doc.createTextNode(' '));
-        modal.children[2].appendChild(CANCEL);
-        input.select();
+            var input = doc.createElement('input');
+                input.type = "text";
+                input.value = value;
+                input.onkeyup = function(e) {
+                    if (isRequired) {
+                        if (e.keyCode == 13 && this.value !== "" && this.value !== value) onSuccess(this.value);
+                    } else {
+                        if (e.keyCode == 13) onSuccess(this.value == value ? "" : this.value);
+                    }
+                };
+            var OK = doc.createElement('button');
+                OK.innerHTML = opt.buttons.OK;
+                OK.onclick = function() {
+                    if (isRequired) {
+                        if (input.value !== "" && input.value !== value) onSuccess(input.value);
+                    } else {
+                        onSuccess(input.value == value ? "" : input.value);
+                    }
+                };
+            var CANCEL = doc.createElement('button');
+                CANCEL.innerHTML = opt.buttons.CANCEL;
+                CANCEL.onclick = function() {
+                    o.parentNode.removeChild(o);
+                    m.parentNode.removeChild(m);
+                };
+            m.children[0].innerHTML = title ? title : "";
+            m.children[1].appendChild(input);
+            m.children[2].appendChild(OK);
+            m.children[2].appendChild(doc.createTextNode(' '));
+            m.children[2].appendChild(CANCEL);
+            input.select();
+        });
     };
 
     // Custom alert box
     base.alert = function(title, message, callback) {
-        var page = defaults.appendModalTo,
-            overlay = doc.createElement('div');
-            overlay.className = 'custom-modal-overlay custom-alert-overlay';
-        var modal = doc.createElement('div');
-            modal.className = 'custom-modal custom-alert';
-            modal.innerHTML = '<div class="custom-modal-header custom-alert-header">' + (title ? title : "") + '</div><div class="custom-modal-content custom-alert-content">' + (message ? message : "") + '</div><div class="custom-modal-action custom-alert-action"></div>';
-        var OK = doc.createElement('button');
-            OK.innerHTML = defaults.buttons.OK;
-            OK.onclick = function() {
-                overlay.parentNode.removeChild(overlay);
-                modal.parentNode.removeChild(modal);
-                if (typeof callback == "function") callback();
-            };
-        page.appendChild(overlay);
-        page.appendChild(modal);
-        modal.children[2].appendChild(OK);
+        base.modal('alert', function(o, m) {
+            var OK = doc.createElement('button');
+                OK.innerHTML = opt.buttons.OK;
+                OK.onclick = function() {
+                    o.parentNode.removeChild(o);
+                    m.parentNode.removeChild(m);
+                    if (typeof callback == "function") callback();
+                };
+            m.children[0].innerHTML = title ? title : "";
+            m.children[1].innerHTML = message ? message : "";
+            m.children[2].appendChild(OK);
+        });
     };
 
     // Custom confirm box
     base.confirm = function(title, message, callback) {
-        var page = defaults.appendModalTo,
-            overlay = doc.createElement('div');
-            overlay.className = 'custom-modal-overlay custom-confirm-overlay';
-        var modal = doc.createElement('div');
-            modal.className = 'custom-modal custom-confirm';
-            modal.innerHTML = '<div class="custom-modal-header custom-confirm-header">' + (title ? title : "") + '</div><div class="custom-modal-content custom-confirm-content">' + (message ? message : "") + '</div><div class="custom-modal-action custom-confirm-action"></div>';
-        var OK = doc.createElement('button');
-            OK.innerHTML = defaults.buttons.OK;
-            OK.onclick = function() {
-                overlay.parentNode.removeChild(overlay);
-                modal.parentNode.removeChild(modal);
-                if (typeof callback.OK == "function") callback.OK();
-            };
-        var CANCEL = doc.createElement('button');
-            CANCEL.innerHTML = defaults.buttons.CANCEL;
-            CANCEL.onclick = function() {
-                overlay.parentNode.removeChild(overlay);
-                modal.parentNode.removeChild(modal);
-                if (typeof callback.CANCEL == "function") callback.CANCEL();
-                return false;
-            };
-        page.appendChild(overlay);
-        page.appendChild(modal);
-        modal.children[2].appendChild(OK);
-        modal.children[2].appendChild(doc.createTextNode(' '));
-        modal.children[2].appendChild(CANCEL);
+        base.modal('confirm', function(o, m) {
+            var OK = doc.createElement('button');
+                OK.innerHTML = opt.buttons.OK;
+                OK.onclick = function() {
+                    o.parentNode.removeChild(o);
+                    m.parentNode.removeChild(m);
+                    if (typeof callback.OK == "function") callback.OK();
+                };
+            var CANCEL = doc.createElement('button');
+                CANCEL.innerHTML = opt.buttons.CANCEL;
+                CANCEL.onclick = function() {
+                    o.parentNode.removeChild(o);
+                    m.parentNode.removeChild(m);
+                    if (typeof callback.CANCEL == "function") callback.CANCEL();
+                    return false;
+                };
+            m.children[0].innerHTML = title ? title : "";
+            m.children[0].innerHTML = message ? message : "";
+            m.children[2].appendChild(OK);
+            m.children[2].appendChild(doc.createTextNode(' '));
+            m.children[2].appendChild(CANCEL);
+        });
     };
 
     editor.toggle = function(open, close, callback) {
@@ -327,7 +327,7 @@ var MTE = function(elem, o) {
                 });
             }
         } else {
-            var placeholder = defaults.placeholder.headingText;
+            var placeholder = opt.placeholder.headingText;
             T = 1;
             editor.insert(h[T] + placeholder, function() {
                 s = editor.selection().end;
@@ -338,29 +338,29 @@ var MTE = function(elem, o) {
         }
     };
 
-    var nav = doc.createElement('nav');
-        nav.className = defaults.toolbarClass;
+    var nav = doc.createElement('div');
+        nav.className = opt.toolbarClass;
 
-    for (var i in defaults.toolbars) {
+    for (var i in opt.toolbars) {
         var a = doc.createElement('a');
             a.href = '#' + i;
-            a.innerHTML = '<i class="' + defaults.iconClassPrefix + i + '"></i>';
+            a.innerHTML = '<i class="' + opt.iconClassPrefix + i + '"></i>';
             a.onclick = function(e) {
-                defaults.toolbars[this.hash.replace('#', "")].click();
-                defaults.click(e, editor);
+                opt.toolbars[this.hash.replace('#', "")].click();
+                opt.click(e, editor);
                 return false;
             };
-        if (defaults.toolbars[i].title) {
-            a.title = defaults.toolbars[i].title;
+        if (opt.toolbars[i].title) {
+            a.title = opt.toolbars[i].title;
         }
-        if (defaults.toolbars[i].position) {
-            var pos = defaults.toolbars[i].position - 1;
+        if (opt.toolbars[i].position) {
+            var pos = opt.toolbars[i].position - 1;
             nav.insertBefore(a, nav.children[pos]);
         } else {
             nav.appendChild(a);
         }
-        if (defaults.toolbar) {
-            editor.area.parentNode.insertBefore(nav, defaults.toolbarPosition == "before" ? editor.area : null);
+        if (opt.toolbar) {
+            editor.area.parentNode.insertBefore(nav, opt.toolbarPosition == "before" ? editor.area : null);
         }
     }
 
@@ -385,7 +385,7 @@ var MTE = function(elem, o) {
         }
 
         win.setTimeout(function() {
-            defaults.keydown(e, editor);
+            opt.keydown(e, editor);
         }, 10);
 
         // Auto close for `(`
@@ -404,12 +404,12 @@ var MTE = function(elem, o) {
         }
 
         // Auto close for `"`
-        if (e.shiftKey && e.keyCode == 222) {
+        if (e.shiftKey && e.keyCode == 222 && s.after[0] !== '\"') {
             return insert('\"' + s.value + '\"', s);
         }
 
         // Auto close for `'`
-        if (e.keyCode == 222) {
+        if (e.keyCode == 222 && s.after[0] !== '\'') {
             return insert('\'' + s.value + '\'', s);
         }
 
@@ -420,13 +420,13 @@ var MTE = function(elem, o) {
 
         // `Shift + Tab` to outdent
         if (e.shiftKey && e.keyCode == 9) {
-            editor.outdent('( *?[0-9]+\. | *?[\\-\\+\\*] |> |' + defaults.tabSize + ')');
+            editor.outdent('( *?[0-9]+\. | *?[\\-\\+\\*] |> |' + opt.tabSize + ')');
             return false;
         }
 
         // `Tab` to indent
         if (e.keyCode == 9) {
-            editor.indent(defaults.tabSize);
+            editor.indent(opt.tabSize);
             return false;
         }
 
@@ -469,8 +469,8 @@ var MTE = function(elem, o) {
             var indentBefore = /(^|\n)( +)(.*?)$/.exec(s.before),
                 indent = indentBefore ? indentBefore[2] : "";
             if (s.before.match(/[\[\{\(\<\>]$/) && s.after.match(/^[\]\}\)\>\<]/)) {
-                editor.insert('\n' + indent + defaults.tabSize + '\n' + indent, function() {
-                    editor.select(s.start + indent.length + defaults.tabSize.length + 1, s.start + indent.length + defaults.tabSize.length + 1);
+                editor.insert('\n' + indent + opt.tabSize + '\n' + indent, function() {
+                    editor.select(s.start + indent.length + opt.tabSize.length + 1, s.start + indent.length + opt.tabSize.length + 1);
                 });
                 return false;
             }
@@ -488,15 +488,15 @@ var MTE = function(elem, o) {
             }
 
             // Remove indentation quickly
-            if(s.value.length === 0 && s.before.match(new RegExp(defaults.tabSize + '$'))) {
-                editor.outdent(defaults.tabSize);
+            if(s.value.length === 0 && s.before.match(new RegExp(opt.tabSize + '$'))) {
+                editor.outdent(opt.tabSize);
                 return false;
             }
         }
 
     };
 
-    defaults.ready(editor);
+    opt.ready(editor);
 
     // Make all library method to be accessible outside the plugin
     base.editor = editor;
