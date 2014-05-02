@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.0.1
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.0.2
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -24,7 +24,6 @@ var MTE = function(elem, o) {
             toolbar: true,
             toolbarClass: 'editor-toolbar',
             toolbarPosition: "before", // "before" or "after" textarea?
-            appendModalTo: doc.body,
             iconClassPrefix: 'fa fa-', // For `<i class="fa fa-ICON_NAME"></i>`
             buttons: {
                 OK: 'OK',
@@ -197,7 +196,7 @@ var MTE = function(elem, o) {
 
     base.modal = function(type, callback) {
         type = type || 'modal';
-        var page = opt.appendModalTo,
+        var page = document.body,
             overlay = doc.createElement('div');
             overlay.className = 'custom-modal-overlay custom-' + type + '-overlay';
         var modal = doc.createElement('div');
@@ -376,14 +375,6 @@ var MTE = function(elem, o) {
 
         var s = editor.selection();
 
-        // Update history data on every 5 key presses
-        if (pressed < 5) {
-            pressed++;
-        } else {
-            editor.updateHistory();
-            pressed = 0;
-        }
-
         win.setTimeout(function() {
             opt.keydown(e, editor);
         }, 10);
@@ -492,6 +483,14 @@ var MTE = function(elem, o) {
                 editor.outdent(opt.tabSize);
                 return false;
             }
+        }
+
+        // Update history data on every 2 key presses
+        if (pressed < 1) {
+            pressed++;
+        } else {
+            editor.updateHistory();
+            pressed = 0;
         }
 
     };
