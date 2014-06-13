@@ -233,8 +233,8 @@ var MTE = function(elem, o) {
         if (s.before.slice(-open.length) != open && s.after.slice(0, close.length) != close) {
             editor.wrap(open, close);
         } else {
-            var clean_B = s.before.substring(0, s.before.length - open.length),
-                clean_A = s.after.substring(close.length);
+            var clean_B = s.before.slice(-open.length) == open ? s.before.substring(0, s.before.length - open.length) : s.before,
+                clean_A = s.after.substring(0, close.length) == close ? s.after.substring(close.length) : s.after;
             editor.area.value = clean_B + s.value + clean_A;
             editor.select(clean_B.length, clean_B.length + s.value.length, function() {
                 editor.updateHistory();
