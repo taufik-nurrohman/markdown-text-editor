@@ -204,7 +204,7 @@ var MTE = function(elem, o) {
         return target;
     }
 
-    var opt = extend(defaults, o), nav = doc.createElement('div');
+    var opt = extend(defaults, o), nav = doc.createElement('span');
 
     if (opt.toolbar) {
         nav.className = opt.toolbarClass;
@@ -423,7 +423,7 @@ var MTE = function(elem, o) {
             alt = e.altKey;
 
         win.setTimeout(function() {
-            opt.keydown(e, editor);
+            opt.keydown(e, base);
         }, 10);
 
         // Disable the end bracket key if the character before
@@ -661,7 +661,7 @@ var MTE = function(elem, o) {
 
     };
 
-    opt.ready(editor);
+    opt.ready(base);
 
     // Make all selection method to be accessible outside the plugin
     base.grip = editor;
