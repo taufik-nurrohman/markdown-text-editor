@@ -1,11 +1,16 @@
-/* @Toolbars */
+/* Toolbars */
 .editor-toolbar {
   display:block;
-  margin:0 1px 10px;
+  margin:0 1px;
   height:20px;
   line-height:20px;
   font-size:14px;
-  overflow:hidden;
+  zoom:1;
+}
+.editor-toolbar:after {
+  content:" ";
+  display:table;
+  clear:both;
 }
 .editor-toolbar a {
   display:block;
@@ -16,11 +21,12 @@
   width:20px;
   height:inherit;
   text-align:center;
-  margin:0 4px 0 0;
+  margin:0 4px 4px 0;
 }
 .editor-toolbar a:active {background-color:#252525}
+textarea + .editor-toolbar a {margin:4px 4px 0 0}
 
-/* @Custom prompt */
+/* Custom Modal */
 .custom-modal-overlay {
   position:fixed !important;
   position:absolute;

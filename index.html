@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <title>Demo</title>
-    <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+    <link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
     <link href="css/demo.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
   </head>
@@ -21,50 +21,53 @@ List Item</textarea>
     <script src="js/library.js"></script>
     <script src="js/mte.js"></script>
     <script>
+
+    // Initiation
     var myEditor = new MTE(document.getElementById('editor-area'), {
         tabSize: '    ',
+        shortcut: true,
         toolbarPosition: "before",
-        toolbars: {
-            /*
-            'strikethrough': {
-                title: 'Strike',
-                click: function() {
-                    myEditor.editor.toggle('~~', '~~');
-                },
-                'position': 3
-            },
-            'warning': {
-                title: 'Example Alert Box',
-                click: function() {
-                    myEditor.alert('Alert Box', 'This is an alert box!');
-                }
-            },
-            'question-circle': {
-                title: 'Example Confirm Box',
-                click: function() {
-                    myEditor.confirm('Confirm Box', 'This is a confirm box!', {
-                        OK: function() {
-                            alert('Confirmed!');
-                        },
-                        CANCEL: function() {
-                            alert('Cancelled!');
-                        }
-                    });
-                }
-            }
-            */
+        keydown: function(e) {
+            console.log('Updated! (keydown:' + e.keyCode + ')');
         },
-        keydown: function() {
-            console.log('Updated.');
-        },
-        click: function() {
-            console.log('Updated.');
+        click: function(e, editor, type) {
+            console.log('Updated! (click:' + type + ')');
         },
         ready: function() {
             console.log('Ready!');
         }
     });
+
+    // Example Custom Buttons
+    myEditor.button('strikethrough', {
+        title: 'Strike',
+        position: 3,
+        click: function(e, editor) {
+            editor.grip.toggle('~~', '~~');
+        }
+    });
+    myEditor.button('warning', {
+        title: 'Example Alert Box',
+        click: function(e, editor) {
+            editor.alert('Alert Box', 'This is an alert box!');
+        }
+    });
+    myEditor.button('question-circle', {
+        title: 'Example Confirm Box',
+        click: function(e, editor) {
+            editor.confirm('Confirm Box', 'This is a confirm box!', {
+                OK: function() {
+                    alert('Confirmed!');
+                },
+                CANCEL: function() {
+                    alert('Cancelled!');
+                }
+            });
+        }
+    });
     </script>
+
+    <p><button onclick="myEditor.grip.wrap('&lt;test&gt;', '&lt;/test&gt;');">Test</button></p>
 
   </body>
 </html>
