@@ -363,7 +363,9 @@ var MTE = function(elem, o) {
                     } else {
                         var placeholder = ' 1. ' + opt.placeholder.list_ol_text;
                         editor.insert(placeholder, function() {
-                            editor.select(s.start + 4, s.start + placeholder.length);
+                            editor.select(s.start + 4, s.start + placeholder.length, function() {
+                                editor.updateHistory();
+                            });
                         });
                     }
                 }
@@ -381,7 +383,9 @@ var MTE = function(elem, o) {
                     } else {
                         var placeholder = ' * ' + opt.placeholder.list_ul_text;
                         editor.insert(placeholder, function() {
-                            editor.select(s.start + 3, s.start + placeholder.length);
+                            editor.select(s.start + 3, s.start + placeholder.length, function() {
+                                editor.updateHistory();
+                            });
                         });
                     }
                 }
@@ -432,13 +436,13 @@ var MTE = function(elem, o) {
         // cursor is matched with the character after cursor
         var b = s.before, a = s.after[0];
         if (
-            b.indexOf('(') !== -1 && shift && k == 48 && a == ')' ||
-            b.indexOf('{') !== -1 && shift && k == 221 && a == '}' ||
-            b.indexOf('[') !== -1 && k == 221 && a == ']' ||
-            b.indexOf('"') !== -1 && shift && k == 222 && a == '"' ||
-            b.indexOf('\'') !== -1 && k == 222 && a == '\'' ||
-            b.indexOf('`') !== -1 && !shift && k == 192 && a == '`' ||
-            b.indexOf('<') !== -1 && shift && k == 190 && a == '>'
+            b.indexOf('(') !== -1 && shift && k == 48 && a == ')' && b.slice(-1) != '\\' ||
+            b.indexOf('{') !== -1 && shift && k == 221 && a == '}' && b.slice(-1) != '\\' ||
+            b.indexOf('[') !== -1 && k == 221 && a == ']' && b.slice(-1) != '\\' ||
+            b.indexOf('"') !== -1 && shift && k == 222 && a == '"' && b.slice(-1) != '\\' ||
+            b.indexOf('\'') !== -1 && !shift && k == 222 && a == '\'' && b.slice(-1) != '\\' ||
+            b.indexOf('`') !== -1 && !shift && k == 192 && a == '`' && b.slice(-1) != '\\' ||
+            b.indexOf('<') !== -1 && shift && k == 190 && a == '>' && b.slice(-1) != '\\'
         ) {
             editor.select(s.end + 1, s.end + 1); // move caret by 1 character to the right
             return false;
@@ -455,17 +459,17 @@ var MTE = function(elem, o) {
         }
 
         // Auto close for `[`
-        if (k == 219) {
+        if (!shift && k == 219) {
             return insert('[' + s.value + ']', s);
         }
 
         // Auto close for `"`
-        if (shift && k == 222 && s.after[0] !== '\"') {
+        if (shift && k == 222) {
             return insert('\"' + s.value + '\"', s);
         }
 
         // Auto close for `'`
-        if (k == 222 && s.after[0] !== '\'') {
+        if (!shift && k == 222) {
             return insert('\'' + s.value + '\'', s);
         }
 
@@ -559,7 +563,9 @@ var MTE = function(elem, o) {
             var match = /(^|\n)([0-9]+\.|[\-\+\*])$/;
             if (s.before.match(match)) {
                 editor.area.value = s.before.replace(match, '$1 $2 ') + s.value + s.after;
-                editor.select(s.end + 2, s.end + 2);
+                editor.select(s.end + 2, s.end + 2, function() {
+                    editor.updateHistory();
+                });
                 return false;
             }
         }
