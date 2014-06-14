@@ -51,7 +51,7 @@ var MTE = function(elem, o) {
                 link_url: 'http://',
                 link_url_title: 'Link URL',
                 image_url: 'http://',
-                image_url_title: 'Image URL',
+                image_url_title: 'Image URL'
             },
             placeholder: {
                 heading_text: 'Heading',
