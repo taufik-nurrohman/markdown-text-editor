@@ -45,9 +45,10 @@ textarea + .editor-toolbar a {margin:4px 4px 0 0}
   left:50%;
   z-index:9999;
   width:250px;
-  background-color:#333;
-  border:1px solid #3c3c3c;
-  color:#aaa;
+  background-color:white;
+  color:black;
+  border:1px solid;
+  text-shadow:none;
   padding:10px;
   margin-left:-126px;
   -webkit-box-shadow:0 1px 3px black;
@@ -73,32 +74,16 @@ textarea + .editor-toolbar a {margin:4px 4px 0 0}
 .custom-modal-action {text-align:center}
 .custom-prompt input {
   display:block;
-  padding:4px;
   margin:0;
-  background-color:#252525;
-  border:1px solid #3c3c3c;
+  padding:4px;
   width:100%;
-  font:inherit;
-  color:white;
   -webkit-box-sizing:border-box;
   -moz-box-sizing:border-box;
   box-sizing:border-box;
   text-shadow:none;
-  -webkit-box-shadow:inset 0 1px 3px rgba(0,0,0,.7);
-  -moz-box-shadow:inset 0 1px 3px rgba(0,0,0,.7);
-  box-shadow:inset 0 1px 3px rgba(0,0,0,.7);
 }
 .custom-modal button {
-  font:inherit;
-  text-shadow:none;
-  background-color:#aaa;
-  border:1px solid #bbb;
-  font-weight:bold;
-  color:#333;
-  padding:4px 10px;
-  -webkit-box-shadow:0 1px 3px rgba(0,0,0,.7);
-  -moz-box-shadow:0 1px 3px rgba(0,0,0,.7);
-  box-shadow:0 1px 3px rgba(0,0,0,.7);
+  padding:2px 6px;
   cursor:pointer;
 }
 .custom-modal button::-moz-focus-inner {
@@ -109,7 +94,7 @@ textarea + .editor-toolbar a {margin:4px 4px 0 0}
 }
 
 
-/* Uncomment the CSS below if you do not want to use icon fonts */
+/* == Uncomment the CSS below if you don't want to use any icon fonts == */
 
 /*
 .editor-toolbar a {width:auto}

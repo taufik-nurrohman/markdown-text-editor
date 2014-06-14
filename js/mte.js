@@ -5,11 +5,12 @@
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
  *
- *    REQUIRES:
- *    =======================================================
- *    1. https://github.com/tovic/simple-text-editor-library
- *    2. https://fortawesome.github.io/Font-Awesome/icons
- *    =======================================================
+ * REQUIRES:
+ * ==========================================================
+ * [1]. https://github.com/tovic/simple-text-editor-library
+ * [2]. https://fortawesome.github.io/Font-Awesome/icons
+ * ==========================================================
+ * ----------------------------------------------------------
  *
  */
 
@@ -212,6 +213,7 @@ var MTE = function(elem, o) {
     }
 
     base.button = function(key, data) {
+        if (data.title === false) return;
         var a = doc.createElement('a');
             a.href = '#' + key;
             a.innerHTML = '<i class="' + opt.iconClassPrefix + key + '"></i>';
@@ -331,12 +333,12 @@ var MTE = function(elem, o) {
                     var alt = decodeURIComponent(
                         r.substring(
                             r.lastIndexOf('/') + 1, r.lastIndexOf('.')
-                        ).replace(/[\-\_\+]+/g, ' ')
+                        ).replace(/[\-\+\.\_]+/g, ' ')
                     ).toLowerCase()
                         .replace(/(?:^|\s)\S/g, function(a) {
                             return a.toUpperCase();
                         });
-                    alt = alt.indexOf('/') < 0 ? alt : opt.placeholder.image_alt;
+                    alt = alt.indexOf('/') === -1 && r.indexOf('.') !== -1 ? alt : opt.placeholder.image_alt;
                     editor.insert('\n![' + alt + '](' + r + ')\n');
                 });
             }
@@ -438,7 +440,7 @@ var MTE = function(elem, o) {
             b.indexOf('`') !== -1 && !shift && k == 192 && a == '`' ||
             b.indexOf('<') !== -1 && shift && k == 190 && a == '>'
         ) {
-            editor.select(s.end + 1, s.end + 1); // move by 1 character to the right
+            editor.select(s.end + 1, s.end + 1); // move caret by 1 character to the right
             return false;
         }
 
@@ -545,7 +547,7 @@ var MTE = function(elem, o) {
 
             // `Ctrl + G` for image
             if (ctrl && k == 71) {
-                toolbars['picture-o'].click();
+                toolbars.image.click();
                 return false;
             }
 

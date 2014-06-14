@@ -32,7 +32,7 @@ List Item</textarea>
         keydown: function(e) {
             console.log('Updated! (keydown:' + e.keyCode + ')');
         },
-        click: function(e, editor, type) {
+        click: function(e, base, type) {
             console.log('Updated! (click:' + type + ')');
         },
         ready: function() {
@@ -44,20 +44,20 @@ List Item</textarea>
     myEditor.button('strikethrough', {
         title: 'Strike',
         position: 3,
-        click: function(e, editor) {
-            editor.grip.toggle('~~', '~~');
+        click: function(e, base) {
+            base.grip.toggle('~~', '~~');
         }
     });
     myEditor.button('warning', {
         title: 'Example Alert Box',
-        click: function(e, editor) {
-            editor.alert('Alert Box', 'This is an alert box!');
+        click: function(e, base) {
+            base.alert('Alert Box', 'This is an alert box!');
         }
     });
     myEditor.button('question-circle', {
         title: 'Example Confirm Box',
-        click: function(e, editor) {
-            editor.confirm('Confirm Box', 'This is a confirm box!', {
+        click: function(e, base) {
+            base.confirm('Confirm Box', 'This is a confirm box!', {
                 OK: function() {
                     alert('Confirmed!');
                 },
