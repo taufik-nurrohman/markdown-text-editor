@@ -585,7 +585,7 @@ var MTE = function(elem, o) {
             // Automatic indentation
             var indentBefore = (new RegExp('(^|\n)((' + opt.tabSize + ')+)(.*?)$')).exec(s.before),
                 indent = indentBefore ? indentBefore[2] : "";
-            if (s.before.match(/[\(\{\[\>]$/) && s.after.match(/^[\<\]\}\)]/)) {
+            if (s.before.match(/[\(\{\[]$/) && s.after.match(/^[\]\}\)]/) || s.before.match(/<[^\/]*?>$/) && s.after.match(/^<\//)) {
                 editor.insert('\n' + indent + opt.tabSize + '\n' + indent, function() {
                     editor.select(s.start + indent.length + opt.tabSize.length + 1, s.start + indent.length + opt.tabSize.length + 1, function() {
                         editor.updateHistory();
