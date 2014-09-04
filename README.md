@@ -3,6 +3,8 @@ Markdown Text Editor Plugin
 
 As mentioned in the title above.
 
+**2014-09-04:** [The HTML version of this editor is available!](https://github.com/tovic/html-text-editor "HTE &ndash; HTML Text Editor")
+
 Demo
 ----
 

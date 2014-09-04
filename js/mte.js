@@ -318,7 +318,7 @@ var MTE = function(elem, o) {
                     title = r;
                     base.prompt(opt.prompt.link_url_title, opt.prompt.link_url, true, function(r) {
                         url = r;
-                        editor.wrap('[' + (s.value.length === 0 ? placeholder : ""), '](' + url + (title !== "" ? ' \"' + title + '\"' : '') + ')', function() {
+                        editor.wrap('[' + (s.value.length === 0 ? placeholder : ""), '](' + url + (title !== "" ? ' \"' + title + '\"' : "") + ')', function() {
                             editor.select(s.start + 1, (s.value.length === 0 ? s.start + placeholder.length + 1 : s.end + 1), function() {
                                 editor.updateHistory();
                             });
