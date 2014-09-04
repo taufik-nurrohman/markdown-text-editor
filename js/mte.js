@@ -540,7 +540,7 @@ var MTE = function(elem, o) {
 
             // `Ctrl + H` for heading
             if (ctrl && k == 72) {
-                toolbars['sort-amount-desc'].click();
+                toolbars['header'].click();
                 return false;
             }
 
