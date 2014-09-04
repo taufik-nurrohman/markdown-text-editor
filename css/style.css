@@ -94,7 +94,10 @@ textarea + .editor-toolbar a {margin:4px 4px 0 0}
 }
 
 
-/* == Uncomment the CSS below if you don't want to use any icon fonts == */
+/**
+ * Uncomment the CSS below if you don't want to use icon fonts ...
+ * ---------------------------------------------------------------
+ */
 
 /*
 .editor-toolbar a {width:auto}
