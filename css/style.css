@@ -39,18 +39,15 @@ textarea + .editor-toolbar a {margin:4px 4px 0 0}
   background-color:rgba(37,37,37,.4);
 }
 .custom-modal {
-  position:fixed !important;
   position:absolute;
-  top:20%;
-  left:50%;
-  z-index:9999;
+  top:0;
+  left:0;
   width:250px;
   background-color:white;
   color:black;
   border:1px solid;
   text-shadow:none;
   padding:10px;
-  margin-left:-126px;
   -webkit-box-shadow:0 1px 3px black;
   -moz-box-shadow:0 1px 3px black;
   box-shadow:0 1px 3px black;

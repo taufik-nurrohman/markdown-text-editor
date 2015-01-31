@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.1.1
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.1.2
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -32,6 +32,8 @@ var MTE = function(elem, o) {
                 yes: 'Yes',
                 no: 'No',
                 cancel: 'Cancel',
+                open: 'Open',
+                close: 'Close',
                 bold: 'Bold',
                 italic: 'Italic',
                 code: 'Code',
@@ -73,10 +75,23 @@ var MTE = function(elem, o) {
         type = type || 'modal';
         var page = doc.body;
         overlay.className = 'custom-modal-overlay custom-' + type + '-overlay';
+        overlay.onclick = base.close;
         modal.className = 'custom-modal custom-' + type;
         modal.innerHTML = '<div class="custom-modal-header custom-' + type + '-header"></div><div class="custom-modal-content custom-' + type + '-content"></div><div class="custom-modal-action custom-' + type + '-action"></div>';
+        modal.style.visibility = "hidden";
         page.appendChild(overlay);
         page.appendChild(modal);
+        win.setTimeout(function() {
+            var w = modal.offsetWidth,
+                h = modal.offsetHeight;
+            modal.style.position = 'absolute';
+            modal.style.top = '50%';
+            modal.style.left = '50%';
+            modal.style.zIndex = '9999';
+            modal.style.marginTop = '-' + (h / 2) + 'px';
+            modal.style.marginLeft = '-' + (w / 2) + 'px';
+            modal.style.visibility = "";
+        }, 10);
         if (typeof callback == "function") callback(overlay, modal);
     };
 
@@ -130,7 +145,9 @@ var MTE = function(elem, o) {
             m.children[2].appendChild(OK);
             m.children[2].appendChild(doc.createTextNode(' '));
             m.children[2].appendChild(CANCEL);
-            input.select();
+            win.setTimeout(function() {
+                input.select();
+            }, 10);
         });
     };
 
@@ -215,12 +232,12 @@ var MTE = function(elem, o) {
     base.button = function(key, data) {
         if (data.title === false) return;
         var a = doc.createElement('a');
-            a.href = '#' + key;
+            a.href = '#' + key.replace(' ', ':').replace(/[^a-z0-9\:]/gi, '-').replace(/-+/g,'-').replace(/^-+|-+$/, "");
             a.setAttribute('tabindex', -1);
             a.innerHTML = '<i class="' + opt.iconClassPrefix + key + '"></i>';
             a.onclick = function(e) {
                 data.click(e, base);
-                opt.click(e, base, key);
+                opt.click(e, base, this.hash.replace('#', ""));
                 return false;
             };
         if (data.title) a.title = data.title;
@@ -246,7 +263,7 @@ var MTE = function(elem, o) {
         if (typeof callback == "function") callback();
     };
 
-    var T = 0, btn = defaults.buttons;
+    var T = 0, btn = opt.buttons;
 
     var toolbars = {
         'bold': {
@@ -398,13 +415,13 @@ var MTE = function(elem, o) {
                 editor.insert('\n---\n');
             }
         },
-        'rotate-left': {
+        'undo': {
             title: btn.undo,
             click: function() {
                 editor.undo();
             }
         },
-        'rotate-right': {
+        'repeat': {
             title: btn.redo,
             click: function() {
                 editor.redo();
@@ -674,5 +691,6 @@ var MTE = function(elem, o) {
 
     // Make all selection method to be accessible outside the plugin
     base.grip = editor;
+    base.grip.config = opt;
 
 };
