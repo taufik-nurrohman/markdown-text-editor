@@ -26,6 +26,7 @@ var MTE = function(elem, o) {
             shortcut: false,
             toolbarClass: 'editor-toolbar',
             toolbarPosition: "before", // before or after `<textarea>` ?
+            buttonClassPrefix: 'editor-toolbar-button editor-toolbar-button-', // for `<a class="editor-toolbar-button editor-toolbar-button-ICON_NAME"></a>`
             iconClassPrefix: 'fa fa-', // for `<i class="fa fa-ICON_NAME"></i>`
             buttons: {
                 ok: 'OK',
@@ -234,6 +235,7 @@ var MTE = function(elem, o) {
     base.button = function(key, data) {
         if (data.title === false) return;
         var a = doc.createElement('a');
+            a.className = opt.buttonClassPrefix + key;
             a.href = '#' + key.replace(' ', ':').replace(/[^a-z0-9\:]/gi, '-').replace(/-+/g,'-').replace(/^-+|-+$/, "");
             a.setAttribute('tabindex', -1);
             a.innerHTML = '<i class="' + opt.iconClassPrefix + key + '"></i>';
