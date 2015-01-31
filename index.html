@@ -3,9 +3,17 @@
   <head>
     <meta charset="utf-8">
     <title>Demo</title>
-    <link href="//netdna.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
     <link href="css/demo.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+    <style>
+.custom-modal-my-modal {width:auto}
+.custom-modal-my-modal img {
+  display:block;
+  width:600px;
+  height:200px;
+}
+</style>
   </head>
   <body>
 
@@ -64,6 +72,23 @@ List Item</textarea>
                 CANCEL: function() {
                     alert('Cancelled!');
                 }
+            });
+        }
+    });
+    myEditor.button('pencil', {
+        title: 'Example Custom Modal',
+        click: function(e, base) {
+            base.modal('my-modal', function(overlay, modal) {
+                var btn = document.createElement('button');
+                btn.innerHTML = 'Save';
+                btn.onclick = function() {
+                    alert('Saved!');
+                    base.close(true);
+                    return false;
+                };
+                modal.children[0].innerHTML = 'Test Modal'; // Header
+                modal.children[1].innerHTML = '<img src="http://lorempixel.com/600/200/animals">'; // Content
+                modal.children[2].appendChild(btn); // Footer
             });
         }
     });

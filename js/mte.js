@@ -74,10 +74,12 @@ var MTE = function(elem, o) {
     base.modal = function(type, callback) {
         type = type || 'modal';
         var page = doc.body;
-        overlay.className = 'custom-modal-overlay custom-' + type + '-overlay';
-        overlay.onclick = base.close;
-        modal.className = 'custom-modal custom-' + type;
-        modal.innerHTML = '<div class="custom-modal-header custom-' + type + '-header"></div><div class="custom-modal-content custom-' + type + '-content"></div><div class="custom-modal-action custom-' + type + '-action"></div>';
+        overlay.className = 'custom-modal-overlay custom-modal-' + type + '-overlay';
+        overlay.onclick = function() {
+            base.close(true);
+        };
+        modal.className = 'custom-modal custom-modal-' + type;
+        modal.innerHTML = '<div class="custom-modal-header custom-modal-' + type + '-header"></div><div class="custom-modal-content custom-modal-' + type + '-content"></div><div class="custom-modal-action custom-modal-' + type + '-action"></div>';
         modal.style.visibility = "hidden";
         page.appendChild(overlay);
         page.appendChild(modal);
@@ -525,7 +527,7 @@ var MTE = function(elem, o) {
             return false;
         }
 
-        if (defaults.shortcut) {
+        if (opt.shortcut) {
 
             // `Ctrl + B` for "bold"
             if (ctrl && k == 66) {

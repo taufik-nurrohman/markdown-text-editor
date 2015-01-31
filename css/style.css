@@ -60,7 +60,7 @@ textarea + .editor-toolbar a {margin:4px 4px 0 0}
   white-space:nowrap;
   text-overflow:ellipsis;
 }
-.custom-modal-content {margin:10px 0 20px}
+.custom-modal-content {margin:10px 0}
 .custom-modal-content input {
   -webkit-box-sizing:border-box;
   -moz-box-sizing:border-box;
@@ -69,7 +69,7 @@ textarea + .editor-toolbar a {margin:4px 4px 0 0}
   width:100%;
 }
 .custom-modal-action {text-align:center}
-.custom-prompt input {
+.custom-modal-prompt input {
   display:block;
   margin:0;
   padding:4px;
