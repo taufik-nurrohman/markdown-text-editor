@@ -95,6 +95,14 @@ var MTE = function(elem, o) {
             modal.style.marginTop = (scroll - (h / 2)) + 'px';
             modal.style.marginLeft = '-' + (w / 2) + 'px';
             modal.style.visibility = "";
+            if (modal.offsetTop < 0) {
+                modal.style.top = 0;
+                modal.style.marginTop = 0;
+            }
+            if (modal.offsetLeft < 0) {
+                modal.style.left = 0;
+                modal.style.marginLeft = 0;
+            }
         }, 10);
         if (typeof callback == "function") callback(overlay, modal);
     };

@@ -40,8 +40,8 @@ textarea + .editor-toolbar a {margin:4px 4px 0 0}
 }
 .custom-modal {
   position:absolute;
-  top:0;
-  left:0;
+  top:-999999px;
+  left:-999999px;
   width:250px;
   background-color:white;
   color:black;
