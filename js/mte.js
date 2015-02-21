@@ -239,6 +239,20 @@ var MTE = function(elem, o) {
         return target;
     }
 
+    function css(elem, rule){
+        var ruleJS = rule.replace(/\-(\w)/g, function(match, $1){
+            return $1.toUpperCase();
+        }), value = 0;
+        if (doc.defaultView && doc.defaultView.getComputedStyle) {
+            value = doc.defaultView.getComputedStyle(elem, "").getPropertyValue(rule);
+        } else if (elem.currentStyle) {
+            value = elem.currentStyle[ruleJS];
+        } else {
+            value = elem.style[ruleJS];
+        }
+        return parseInt(value, 10);
+    }
+
     var opt = extend(defaults, o), nav = doc.createElement('span');
 
     if (opt.toolbar) {
@@ -459,11 +473,13 @@ var MTE = function(elem, o) {
 
     editor.area.onkeydown = function(e) {
 
-        var s = editor.selection(),
+        var EA = this,
+            s = editor.selection(),
             k = e.keyCode,
             ctrl = e.ctrlKey,
             shift = e.shiftKey,
-            alt = e.altKey;
+            alt = e.altKey,
+            scroll = EA.scrollTop + css(EA, 'line-height');
 
         win.setTimeout(function() {
             opt.keydown(e, base);
@@ -599,7 +615,7 @@ var MTE = function(elem, o) {
         if (k == 32) {
             var match = /(^|\n)([0-9]+\.|[-+*])$/;
             if (s.before.match(match)) {
-                editor.area.value = s.before.replace(match, '$1 $2 ') + s.value + s.after;
+                EA.value = s.before.replace(match, '$1 $2 ') + s.value + s.after;
                 editor.select(s.end + 2, s.end + 2, function() {
                     editor.updateHistory();
                 });
@@ -616,6 +632,7 @@ var MTE = function(elem, o) {
                 var take = listItems.exec(s.before),
                     list = /[0-9]+\./.test(take[3]) ? opt.OL.replace(/%d/g, (parseInt(take[3], 10) + 1)) : take[3]; // `<ol>` or `<ul>` ?
                 editor.insert('\n' + take[2] + list + take[4], null);
+                EA.scrollTop = scroll;
                 return false;
             }
 
@@ -628,13 +645,13 @@ var MTE = function(elem, o) {
                         editor.updateHistory();
                     });
                 });
+                EA.scrollTop = scroll;
                 return false;
             }
 
-            if (indent !== "") {
-                editor.insert('\n' + indent);
-                return false;
-            }
+            editor.insert('\n' + indent);
+            EA.scrollTop = scroll;
+            return false;
 
         }
 
