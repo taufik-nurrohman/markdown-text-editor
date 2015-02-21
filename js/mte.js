@@ -28,6 +28,11 @@ var MTE = function(elem, o) {
             toolbarPosition: "before", // before or after `<textarea>` ?
             buttonClassPrefix: 'editor-toolbar-button editor-toolbar-button-', // for `<a class="editor-toolbar-button editor-toolbar-button-ICON_NAME"></a>`
             iconClassPrefix: 'fa fa-', // for `<i class="fa fa-ICON_NAME"></i>`
+            STRONG: '**',
+            EM: '_',
+            UL: '* ',
+            OL: '%d.',
+            HR: '---',
             buttons: {
                 ok: 'OK',
                 yes: 'Yes',
@@ -49,7 +54,7 @@ var MTE = function(elem, o) {
                 redo: 'Redo'
             },
             prompt: {
-                link_title: 'link title goes here...',
+                link_title: 'link title goes here\u2026',
                 link_title_title: 'Link Title',
                 link_url: 'http://',
                 link_url_title: 'Link URL',
@@ -282,13 +287,13 @@ var MTE = function(elem, o) {
         'bold': {
             title: btn.bold,
             click: function() {
-                editor.toggle('**', '**');
+                editor.toggle(opt.STRONG, opt.STRONG);
             }
         },
         'italic': {
             title: btn.italic,
             click: function() {
-                editor.toggle('_', '_');
+                editor.toggle(opt.EM, opt.EM);
             }
         },
         'code': {
@@ -365,7 +370,7 @@ var MTE = function(elem, o) {
                     var alt = decodeURIComponent(
                         r.substring(
                             r.lastIndexOf('/') + 1, r.lastIndexOf('.')
-                        ).replace(/[\-\+\.\_]+/g, ' ')
+                        ).replace(/[-+._]+/g, ' ')
                     ).toLowerCase()
                         .replace(/(?:^|\s)\S/g, function(a) {
                             return a.toUpperCase();
@@ -379,8 +384,7 @@ var MTE = function(elem, o) {
             title: btn.ol,
             click: function() {
                 var s = editor.selection(),
-                    ol = 0,
-                    added = "";
+                    ol = 0;
                 if (s.value == opt.placeholder.list_ol_text) {
                     editor.select(s.start, s.end);
                 } else {
@@ -388,14 +392,14 @@ var MTE = function(elem, o) {
                         editor.indent("", function() {
                             editor.replace(/^[^\n\r]/gm, function(str) {
                                 ol++;
-                                added += ' ' + ol + '. ';
-                                return str.replace(/^/, ' ' + ol + '. ');
+                                return str.replace(/^/, ' ' + opt.OL.replace(/%d/g, ol) + ' ');
                             });
                         });
                     } else {
-                        var placeholder = ' 1. ' + opt.placeholder.list_ol_text;
+                        var OL = ' ' + opt.OL.replace(/%d/g, 1) + ' ',
+                            placeholder = OL + opt.placeholder.list_ol_text;
                         editor.insert(placeholder, function() {
-                            editor.select(s.start + 4, s.start + placeholder.length, function() {
+                            editor.select(s.start + OL.length, s.start + placeholder.length, function() {
                                 editor.updateHistory();
                             });
                         });
@@ -410,12 +414,13 @@ var MTE = function(elem, o) {
                 if (s.value == opt.placeholder.list_ul_text) {
                     editor.select(s.start, s.end);
                 } else {
+                    var UL = ' ' + opt.UL + ' ';
                     if (s.value.length > 0) {
-                        editor.indent(' * ');
+                        editor.indent(UL);
                     } else {
-                        var placeholder = ' * ' + opt.placeholder.list_ul_text;
+                        var placeholder = UL + opt.placeholder.list_ul_text;
                         editor.insert(placeholder, function() {
-                            editor.select(s.start + 3, s.start + placeholder.length, function() {
+                            editor.select(s.start + UL.length, s.start + placeholder.length, function() {
                                 editor.updateHistory();
                             });
                         });
@@ -426,7 +431,7 @@ var MTE = function(elem, o) {
         'ellipsis-h': {
             title: btn.rule,
             click: function() {
-                editor.insert('\n---\n');
+                editor.insert('\n' + opt.HR + '\n');
             }
         },
         'undo': {
@@ -517,7 +522,7 @@ var MTE = function(elem, o) {
 
         // `Shift + Tab` to outdent
         if (shift && k == 9) {
-            editor.outdent('( *[0-9]+\. | *[\\-\\+\\*] |> |' + opt.tabSize + ')');
+            editor.outdent('( *[0-9]+\. *| *[-+*] *|> *|' + opt.tabSize + ')');
             return false;
         }
 
@@ -592,7 +597,7 @@ var MTE = function(elem, o) {
         // Add a space at the beginning of the list item when user start
         // pressing the space bar after typing `1.` or `*` or `-` or `+`
         if (k == 32) {
-            var match = /(^|\n)([0-9]+\.|[\-\+\*])$/;
+            var match = /(^|\n)([0-9]+\.|[-+*])$/;
             if (s.before.match(match)) {
                 editor.area.value = s.before.replace(match, '$1 $2 ') + s.value + s.after;
                 editor.select(s.end + 2, s.end + 2, function() {
@@ -606,11 +611,11 @@ var MTE = function(elem, o) {
         if (k == 13) {
 
             // Automatic list increment
-            var listItems = /(^|\n)( *?)([0-9]+\.|[\-\+\*]) (.*?)$/;
+            var listItems = /(^|\n)( *)([0-9]+\.|[-+*])( *)(.*?)$/;
             if (s.before.match(listItems)) {
                 var take = listItems.exec(s.before),
-                    list = /[0-9]+\./.test(take[3]) ? parseInt(take[3], 10) + 1 + '.' : take[3]; // `<ol>` or `<ul>` ?
-                editor.insert('\n' + take[2] + list + ' ', null);
+                    list = /[0-9]+\./.test(take[3]) ? opt.OL.replace(/%d/g, (parseInt(take[3], 10) + 1)) : take[3]; // `<ol>` or `<ul>` ?
+                editor.insert('\n' + take[2] + list + take[4], null);
                 return false;
             }
 
@@ -626,9 +631,10 @@ var MTE = function(elem, o) {
                 return false;
             }
 
-            editor.insert('\n' + indent);
-
-            return false;
+            if (indent !== "") {
+                editor.insert('\n' + indent);
+                return false;
+            }
 
         }
 
@@ -638,8 +644,8 @@ var MTE = function(elem, o) {
             if (s.value.length === 0) {
 
                 // Remove empty list item quickly
-                if(s.before.match(/( *?)([0-9]+\.|[\-\+\*]) $/)) {
-                    editor.outdent('( *?)([0-9]+\.|[\-\+\*]) ');
+                if(s.before.match(/ *([0-9]+\.|[-+*]) *$/)) {
+                    editor.outdent(' *([0-9]+\.|[-+*]) *');
                     return false;
                 }
 
