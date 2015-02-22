@@ -244,13 +244,11 @@ var MTE = function(elem, o) {
             return $1.toUpperCase();
         }), value = 0;
         if (doc.defaultView && doc.defaultView.getComputedStyle) {
-            value = doc.defaultView.getComputedStyle(elem, "").getPropertyValue(rule);
-        } else if (elem.currentStyle) {
-            value = elem.currentStyle[ruleJS];
+            value = doc.defaultView.getComputedStyle(elem, null).getPropertyValue(rule);
         } else {
             value = elem.style[ruleJS];
         }
-        return parseInt(value, 10);
+        return value;
     }
 
     var opt = extend(defaults, o), nav = doc.createElement('span');
@@ -479,7 +477,7 @@ var MTE = function(elem, o) {
             ctrl = e.ctrlKey,
             shift = e.shiftKey,
             alt = e.altKey,
-            scroll = EA.scrollTop + css(EA, 'line-height');
+            scroll = EA.scrollTop + parseInt(css(EA, 'line-height'), 10);
 
         win.setTimeout(function() {
             opt.keydown(e, base);
