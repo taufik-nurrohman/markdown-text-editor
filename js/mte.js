@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.1.3
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.1.4
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -230,7 +230,7 @@ var MTE = function(elem, o) {
     function extend(target, source) {
         target = target || {};
         for (var prop in source) {
-            if (typeof source[prop] === "object") {
+            if (typeof source[prop] == "object") {
                 target[prop] = extend(target[prop], source[prop]);
             } else {
                 target[prop] = source[prop];
@@ -262,7 +262,7 @@ var MTE = function(elem, o) {
         if (data.title === false) return;
         var a = doc.createElement('a');
             a.className = opt.buttonClassPrefix + key;
-            a.href = '#' + key.replace(' ', ':').replace(/[^a-z0-9\:]/gi, '-').replace(/-+/g,'-').replace(/^-+|-+$/, "");
+            a.href = '#' + key.replace(' ', ':').replace(/[^a-z0-9\:]/gi, '-').replace(/-+/g,'-').replace(/^-+|-+$/g, "");
             a.setAttribute('tabindex', -1);
             a.innerHTML = '<i class="' + opt.iconClassPrefix + key + '"></i>';
             a.onclick = function(e) {
@@ -383,10 +383,9 @@ var MTE = function(elem, o) {
                         r.substring(
                             r.lastIndexOf('/') + 1, r.lastIndexOf('.')
                         ).replace(/[-+._]+/g, ' ')
-                    ).toLowerCase()
-                        .replace(/(?:^|\s)\S/g, function(a) {
-                            return a.toUpperCase();
-                        });
+                    ).toLowerCase().replace(/(?:^|\s)\S/g, function(a) {
+                        return a.toUpperCase();
+                    });
                     alt = alt.indexOf('/') === -1 && r.indexOf('.') !== -1 ? alt : opt.placeholder.image_alt;
                     editor.insert('\n![' + alt + '](' + r + ')\n');
                 });
@@ -578,12 +577,12 @@ var MTE = function(elem, o) {
                 return false;
             }
 
-            // `Alt + Q` or `Alt + Shift + Q` for "quote"
-            if (alt && k == 81) {
-                if (shift) {
-                    editor.toggle('&ldquo;', '&rdquo;'); // double quote
+            // `Shift + Q` or `Shift + Alt + Q` for "quote"
+            if (shift && k == 81) {
+                if (alt) {
+                    editor.toggle('\u2018', '\u2019'); // single quote
                 } else {
-                    editor.toggle('&lsquo;', '&rsquo;'); // single quote
+                    editor.toggle('\u201C', '\u201D'); // double quote
                 }
                 return false;
             }
@@ -724,7 +723,7 @@ var MTE = function(elem, o) {
 
     opt.ready(base);
 
-    // Make all selection method to be accessible outside the plugin
+    // Make all selection method becomes accessible outside the plugin
     base.grip = editor;
     base.grip.config = opt;
 
