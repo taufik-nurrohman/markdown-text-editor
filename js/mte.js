@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.1.4
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.1.5
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -401,7 +401,7 @@ var MTE = function(elem, o) {
                 } else {
                     if (s.value.length > 0) {
                         editor.indent("", function() {
-                            editor.replace(/^[^\n\r]/gm, function(str) {
+                            editor.replace(/^[^\n]/gm, function(str) {
                                 ol++;
                                 return str.replace(/^/, ' ' + opt.OL.replace(/%d/g, ol) + ' ');
                             });
@@ -463,7 +463,7 @@ var MTE = function(elem, o) {
 
     var insert = function(chars, s) {
         editor.insert(chars, function() {
-            editor.select(s.end + 1, s.end + 1);
+            editor.select(s.end + 1);
         });
         return false;
     };
@@ -494,7 +494,7 @@ var MTE = function(elem, o) {
             b.indexOf('`') !== -1 && !shift && k == 192 && a == '`' && b.slice(-1) != '\\' ||
             b.indexOf('<') !== -1 && shift && k == 190 && a == '>' && b.slice(-1) != '\\'
         ) {
-            editor.select(s.end + 1, s.end + 1); // move caret by 1 character to the right
+            editor.select(s.end + 1); // move caret by 1 character to the right
             return false;
         }
 
@@ -541,6 +541,16 @@ var MTE = function(elem, o) {
 
         // `Tab` to indent
         if (k == 9) {
+            // Auto close for HTML tags
+            // Case `<div|>`
+            if (s.before.match(/<[^\/>]*?$/) && s.after[0] == '>') {
+                var match = /<([^\/>]*?)$/.exec(s.before);
+                EA.value = s.before + ' ' + s.value + '></' + match[1].split(' ')[0] + s.after;
+                editor.select(s.start + 1, function() {
+                    editor.updateHistory();
+                });
+                return false;
+            }
             editor.indent(opt.tabSize);
             return false;
         }
@@ -578,7 +588,7 @@ var MTE = function(elem, o) {
             }
 
             // `Shift + Q` or `Shift + Alt + Q` for "quote"
-            if (shift && k == 81) {
+            if (shift && k == 81 && s.value.length > 0) {
                 if (alt) {
                     editor.toggle('\u2018', '\u2019'); // single quote
                 } else {
@@ -613,7 +623,7 @@ var MTE = function(elem, o) {
             var match = /(^|\n)([0-9]+\.|[-+*])$/;
             if (s.before.match(match)) {
                 EA.value = s.before.replace(match, '$1 $2 ') + s.value + s.after;
-                editor.select(s.end + 2, s.end + 2, function() {
+                editor.select(s.end + 2, function() {
                     editor.updateHistory();
                 });
                 return false;
@@ -624,21 +634,21 @@ var MTE = function(elem, o) {
         if (k == 13) {
 
             // Automatic list increment
-            var listItems = /(^|\n)( *)([0-9]+\.|[-+*])( *)(.*?)$/;
+            var listItems = /(?:^|\n)( *)([0-9]+\.|[-+*])( *)(.*?)$/;
             if (s.before.match(listItems)) {
                 var take = listItems.exec(s.before),
-                    list = /[0-9]+\./.test(take[3]) ? opt.OL.replace(/%d/g, (parseInt(take[3], 10) + 1)) : take[3]; // `<ol>` or `<ul>` ?
-                editor.insert('\n' + take[2] + list + take[4], null);
+                    list = /[0-9]+\./.test(take[2]) ? opt.OL.replace(/%d/g, (parseInt(take[2], 10) + 1)) : take[2]; // `<ol>` or `<ul>` ?
+                editor.insert('\n' + take[1] + list + take[3], null);
                 EA.scrollTop = scroll;
                 return false;
             }
 
             // Automatic indentation
-            var indentBefore = (new RegExp('(^|\n)((' + opt.tabSize + ')+)(.*?)$')).exec(s.before),
-                indent = indentBefore ? indentBefore[2] : "";
+            var indentBefore = (new RegExp('(?:^|\n)((' + opt.tabSize + ')+)(.*?)$')).exec(s.before),
+                indent = indentBefore ? indentBefore[1] : "";
             if (s.before.match(/[\(\{\[]$/) && s.after.match(/^[\]\}\)]/) || s.before.match(/<[^\/]*?>$/) && s.after.match(/^<\//)) {
                 editor.insert('\n' + indent + opt.tabSize + '\n' + indent, function() {
-                    editor.select(s.start + indent.length + opt.tabSize.length + 1, s.start + indent.length + opt.tabSize.length + 1, function() {
+                    editor.select(s.start + indent.length + opt.tabSize.length + 1, function() {
                         editor.updateHistory();
                     });
                 });
@@ -717,7 +727,9 @@ var MTE = function(elem, o) {
 
         }
 
-        editor.updateHistory();
+        if (!alt && !ctrl && !shift) {
+            editor.updateHistory();
+        }
 
     };
 
