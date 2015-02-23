@@ -16,6 +16,10 @@
 
 var MTE = function(elem, o) {
 
+    // Backward Compatibility
+    if (typeof o.prompt != "undefined") o.prompts = o.prompt;
+    if (typeof o.placeholder != "undefined") o.placeholders = o.placeholder;
+
     var base = this,
         win = window,
         doc = document,
@@ -53,7 +57,7 @@ var MTE = function(elem, o) {
                 undo: 'Undo',
                 redo: 'Redo'
             },
-            prompt: {
+            prompts: {
                 link_title: 'link title goes here\u2026',
                 link_title_title: 'Link Title',
                 link_url: 'http://',
@@ -61,7 +65,7 @@ var MTE = function(elem, o) {
                 image_url: 'http://',
                 image_url_title: 'Image URL'
             },
-            placeholder: {
+            placeholders: {
                 heading_text: 'Heading',
                 link_text: 'link text',
                 list_ul_text: 'List Item',
@@ -264,7 +268,7 @@ var MTE = function(elem, o) {
             a.className = opt.buttonClassPrefix + key;
             a.href = '#' + key.replace(' ', ':').replace(/[^a-z0-9\:]/gi, '-').replace(/-+/g,'-').replace(/^-+|-+$/g, "");
             a.setAttribute('tabindex', -1);
-            a.innerHTML = '<i class="' + opt.iconClassPrefix + key + '"></i>';
+            a.innerHTML = data.text ? data.text.replace(/%s/g, key) : '<i class="' + opt.iconClassPrefix + key + '"></i>';
             a.onclick = function(e) {
                 data.click(e, base);
                 opt.click(e, base, this.hash.replace('#', ""));
@@ -346,7 +350,7 @@ var MTE = function(elem, o) {
                         });
                     }
                 } else {
-                    var placeholder = opt.placeholder.heading_text;
+                    var placeholder = opt.placeholders.heading_text;
                     T = 1;
                     editor.insert(h[T] + placeholder, function() {
                         s = editor.selection().end;
@@ -361,10 +365,10 @@ var MTE = function(elem, o) {
             title: btn.link,
             click: function() {
                 var s = editor.selection(),
-                    title, url, placeholder = opt.placeholder.link_text;
-                base.prompt(opt.prompt.link_title_title, opt.prompt.link_title, false, function(r) {
+                    title, url, placeholder = opt.placeholders.link_text;
+                base.prompt(opt.prompts.link_title_title, opt.prompts.link_title, false, function(r) {
                     title = r;
-                    base.prompt(opt.prompt.link_url_title, opt.prompt.link_url, true, function(r) {
+                    base.prompt(opt.prompts.link_url_title, opt.prompts.link_url, true, function(r) {
                         url = r;
                         editor.wrap('[' + (s.value.length === 0 ? placeholder : ""), '](' + url + (title !== "" ? ' \"' + title + '\"' : "") + ')', function() {
                             editor.select(s.start + 1, (s.value.length === 0 ? s.start + placeholder.length + 1 : s.end + 1), function() {
@@ -378,7 +382,7 @@ var MTE = function(elem, o) {
         'image': {
             title: btn.image,
             click: function() {
-                base.prompt(opt.prompt.image_url_title, opt.prompt.image_url, true, function(r) {
+                base.prompt(opt.prompts.image_url_title, opt.prompts.image_url, true, function(r) {
                     var alt = decodeURIComponent(
                         r.substring(
                             r.lastIndexOf('/') + 1, r.lastIndexOf('.')
@@ -386,7 +390,7 @@ var MTE = function(elem, o) {
                     ).toLowerCase().replace(/(?:^|\s)\S/g, function(a) {
                         return a.toUpperCase();
                     });
-                    alt = alt.indexOf('/') === -1 && r.indexOf('.') !== -1 ? alt : opt.placeholder.image_alt;
+                    alt = alt.indexOf('/') === -1 && r.indexOf('.') !== -1 ? alt : opt.placeholders.image_alt;
                     editor.insert('\n![' + alt + '](' + r + ')\n');
                 });
             }
@@ -396,7 +400,7 @@ var MTE = function(elem, o) {
             click: function() {
                 var s = editor.selection(),
                     ol = 0;
-                if (s.value == opt.placeholder.list_ol_text) {
+                if (s.value == opt.placeholders.list_ol_text) {
                     editor.select(s.start, s.end);
                 } else {
                     if (s.value.length > 0) {
@@ -408,7 +412,7 @@ var MTE = function(elem, o) {
                         });
                     } else {
                         var OL = ' ' + opt.OL.replace(/%d/g, 1) + ' ',
-                            placeholder = OL + opt.placeholder.list_ol_text;
+                            placeholder = OL + opt.placeholders.list_ol_text;
                         editor.insert(placeholder, function() {
                             editor.select(s.start + OL.length, s.start + placeholder.length, function() {
                                 editor.updateHistory();
@@ -422,14 +426,14 @@ var MTE = function(elem, o) {
             title: btn.ul,
             click: function() {
                 var s = editor.selection();
-                if (s.value == opt.placeholder.list_ul_text) {
+                if (s.value == opt.placeholders.list_ul_text) {
                     editor.select(s.start, s.end);
                 } else {
                     var UL = ' ' + opt.UL + ' ';
                     if (s.value.length > 0) {
                         editor.indent(UL);
                     } else {
-                        var placeholder = UL + opt.placeholder.list_ul_text;
+                        var placeholder = UL + opt.placeholders.list_ul_text;
                         editor.insert(placeholder, function() {
                             editor.select(s.start + UL.length, s.start + placeholder.length, function() {
                                 editor.updateHistory();
