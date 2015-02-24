@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.1.5
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.1.6
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -34,9 +34,10 @@ var MTE = function(elem, o) {
             iconClassPrefix: 'fa fa-', // for `<i class="fa fa-ICON_NAME"></i>`
             STRONG: '**',
             EM: '_',
-            UL: '* ',
-            OL: '%d.',
+            UL: '- ',
+            OL: '%d. ',
             HR: '---',
+            PRE: '    ', // Use ~~~\n%s\n~~~ or ```\n%s\n``` to enable fenced code block syntax in "Markdown Extra"
             buttons: {
                 ok: 'OK',
                 yes: 'Yes',
@@ -66,6 +67,7 @@ var MTE = function(elem, o) {
                 image_url_title: 'Image URL'
             },
             placeholders: {
+                text: 'text goes here\u2026',
                 heading_text: 'Heading',
                 link_text: 'link text',
                 list_ul_text: 'List Item',
@@ -257,6 +259,14 @@ var MTE = function(elem, o) {
 
     var opt = extend(defaults, o), nav = doc.createElement('span');
 
+    // Escapes for `RegExp()`
+    var re_ = /([!$^*\(\)\-+=\{\}\[\].,?\\\/])/g,
+        // re_UL = opt.UL.replace(re_, '\\$1').replace(/\s*$/, ""),
+        re_UL = opt.UL.replace(re_, '\\$1').replace(/\\[-+*]/g, '[-+*]'),
+        re_OL = opt.OL.replace(re_, '\\$1').replace(/%d/g, '[0-9]+'),
+        re_TAB = opt.tabSize.replace(re_, '\\$1'),
+        re_PRE = opt.PRE.replace(re_, '\\$1');
+
     if (opt.toolbar) {
         nav.className = opt.toolbarClass;
         editor.area.parentNode.insertBefore(nav, opt.toolbarPosition == "before" ? editor.area : null);
@@ -317,8 +327,17 @@ var MTE = function(elem, o) {
             click: function() {
                 var v = editor.selection().value;
                 if (v.indexOf('\n') !== -1 && v.length > 0) {
-                    // editor.indent(opt.tabSize);
-                    editor.indent('    ');
+                    if (opt.PRE.indexOf('%s') === -1) {
+                        var match = '(' + re_PRE + '|\\t| {4})';
+                        if (v.match(new RegExp('^' + match))) {
+                            editor.outdent(match);
+                        } else {
+                            editor.indent(re_PRE);
+                        }
+                    } else {
+                        var wrap = opt.PRE.split('%s');
+                        editor.toggle(wrap[0], wrap[1] ? wrap[1] : wrap[0]);
+                    }
                 } else {
                     editor.toggle('`', '`');
                 }
@@ -327,24 +346,31 @@ var MTE = function(elem, o) {
         'quote-right': {
             title: btn.quote,
             click: function() {
-                editor.indent('> ');
+                var v = editor.selection().value;
+                if (v[0] === '>') {
+                    editor.outdent('> ');
+                } else {
+                    editor.indent('> ');
+                }
             }
         },
         'header': {
             title: btn.heading,
             click: function() {
                 var s = editor.selection(),
-                    h = ["", '# ', '## ', '### ', '#### ', '##### ', '###### '];
+                    h = ["", "", "", '### ', '#### ', '##### ', '###### '];
                 T = T < h.length - 1 ? T + 1 : 0;
                 if (s.value.length > 0) {
-                    if (!s.before.match(/\#+ $/)) {
-                        editor.wrap(h[T], "", function() {
-                            editor.replace(/^\#+ /, "");
+                    var clean_B = s.before.replace(/\#+ $/, ""),
+                        clean_V = s.value.replace(/^\#+ |\n+[-=]+/, "").replace(/\n+/g, ' '),
+                        clean_A = s.after.replace(/\n+[-=]+/, "");
+                    if (T > 0 && T < 3) {
+                        editor.area.value = clean_B + clean_V + '\n' + clean_V.replace(/./g, T === 1 ? '=' : '-') + clean_A;
+                        editor.select(clean_B.length, clean_B.length + clean_V.length, function() {
+                            editor.updateHistory();
                         });
                     } else {
-                        var clean_B = s.before.replace(/\#+ $/, ""),
-                            clean_V = s.value.replace(/^\#+ /, "");
-                        editor.area.value = clean_B + h[T] + clean_V + s.after;
+                        editor.area.value = clean_B + h[T] + clean_V + clean_A;
                         editor.select(clean_B.length + h[T].length, clean_B.length + h[T].length + clean_V.length, function() {
                             editor.updateHistory();
                         });
@@ -352,9 +378,9 @@ var MTE = function(elem, o) {
                 } else {
                     var placeholder = opt.placeholders.heading_text;
                     T = 1;
-                    editor.insert(h[T] + placeholder, function() {
-                        s = editor.selection().end;
-                        editor.select(s - placeholder.length - h[T].length + 2, s, function() {
+                    editor.insert(placeholder + '\n' + placeholder.replace(/./g, '='), function() {
+                        s = editor.selection().end - 1;
+                        editor.select(s - (placeholder.length * 2), s - placeholder.length, function() {
                             editor.updateHistory();
                         });
                     });
@@ -407,11 +433,11 @@ var MTE = function(elem, o) {
                         editor.indent("", function() {
                             editor.replace(/^[^\n]/gm, function(str) {
                                 ol++;
-                                return str.replace(/^/, ' ' + opt.OL.replace(/%d/g, ol) + ' ');
+                                return str.replace(/^/, ' ' + opt.OL.replace(/%d/g, ol));
                             });
                         });
                     } else {
-                        var OL = ' ' + opt.OL.replace(/%d/g, 1) + ' ',
+                        var OL = ' ' + opt.OL.replace(/%d/g, 1),
                             placeholder = OL + opt.placeholders.list_ol_text;
                         editor.insert(placeholder, function() {
                             editor.select(s.start + OL.length, s.start + placeholder.length, function() {
@@ -429,7 +455,7 @@ var MTE = function(elem, o) {
                 if (s.value == opt.placeholders.list_ul_text) {
                     editor.select(s.start, s.end);
                 } else {
-                    var UL = ' ' + opt.UL + ' ';
+                    var UL = ' ' + opt.UL;
                     if (s.value.length > 0) {
                         editor.indent(UL);
                     } else {
@@ -486,64 +512,63 @@ var MTE = function(elem, o) {
             opt.keydown(e, base);
         }, 10);
 
-        // Disable the end bracket key if the character before
-        // cursor is matched with the character after cursor
-        var b = s.before, a = s.after[0];
+        // Disable the end bracket key if character before
+        // cursor is matched with character after cursor
+        var b = s.before, a = s.after[0], esc = b.slice(-1) == '\\';
         if (
-            b.indexOf('(') !== -1 && shift && k == 48 && a == ')' && b.slice(-1) != '\\' ||
-            b.indexOf('{') !== -1 && shift && k == 221 && a == '}' && b.slice(-1) != '\\' ||
-            b.indexOf('[') !== -1 && k == 221 && a == ']' && b.slice(-1) != '\\' ||
-            b.indexOf('"') !== -1 && shift && k == 222 && a == '"' && b.slice(-1) != '\\' ||
-            b.indexOf('\'') !== -1 && !shift && k == 222 && a == '\'' && b.slice(-1) != '\\' ||
-            b.indexOf('`') !== -1 && !shift && k == 192 && a == '`' && b.slice(-1) != '\\' ||
-            b.indexOf('<') !== -1 && shift && k == 190 && a == '>' && b.slice(-1) != '\\'
+            b.indexOf('(') !== -1 && shift && k == 48 && a == ')' && !esc ||
+            b.indexOf('{') !== -1 && shift && k == 221 && a == '}' && !esc ||
+            b.indexOf('[') !== -1 && k == 221 && a == ']' && !esc ||
+            b.indexOf('"') !== -1 && shift && k == 222 && a == '"' && !esc ||
+            b.indexOf('\'') !== -1 && !shift && k == 222 && a == '\'' && !esc ||
+            b.indexOf('`') !== -1 && !shift && k == 192 && a == '`' && !esc ||
+            b.indexOf('<') !== -1 && shift && k == 190 && a == '>' && !esc
         ) {
             editor.select(s.end + 1); // move caret by 1 character to the right
             return false;
         }
 
         // Auto close for `(`
-        if (shift && k == 57) {
+        if (shift && k == 57 && !esc) {
             return insert('(' + s.value + ')', s);
         }
 
         // Auto close for `{`
-        if (shift && k == 219) {
+        if (shift && k == 219 && !esc) {
             return insert('{' + s.value + '}', s);
         }
 
         // Auto close for `[`
-        if (!shift && k == 219) {
+        if (!shift && k == 219 && !esc) {
             return insert('[' + s.value + ']', s);
         }
 
         // Auto close for `"`
-        if (shift && k == 222) {
+        if (shift && k == 222 && !esc) {
             return insert('\"' + s.value + '\"', s);
         }
 
         // Auto close for `'`
-        if (!shift && k == 222) {
+        if (!shift && k == 222 && !esc) {
             return insert('\'' + s.value + '\'', s);
         }
 
         // Auto close for ```
-        if (!shift && k == 192) {
+        if (!shift && k == 192 && !esc) {
             return insert('`' + s.value + '`', s);
         }
 
         // Auto close for `<`
-        if (shift && k == 188) {
+        if (shift && k == 188 && !esc) {
             return insert('<' + s.value + '>', s);
         }
 
         // `Shift + Tab` to outdent
         if (shift && k == 9) {
-            editor.outdent('( *[0-9]+\. *| *[-+*] *|> *|' + opt.tabSize + ')');
+            editor.outdent('( *' + re_OL + '| *' + re_UL + '|> *|' + re_TAB + ')');
             return false;
         }
 
-        // `Tab` to indent
         if (k == 9) {
             // Auto close for HTML tags
             // Case `<div|>`
@@ -555,7 +580,8 @@ var MTE = function(elem, o) {
                 });
                 return false;
             }
-            editor.indent(opt.tabSize);
+            // `Tab` to indent
+            editor.indent(re_TAB);
             return false;
         }
 
@@ -624,9 +650,9 @@ var MTE = function(elem, o) {
         // Add a space at the beginning of the list item when user start
         // pressing the space bar after typing `1.` or `*` or `-` or `+`
         if (k == 32) {
-            var match = /(^|\n)([0-9]+\.|[-+*])$/;
-            if (s.before.match(match)) {
-                EA.value = s.before.replace(match, '$1 $2 ') + s.value + s.after;
+            var match = '(^|\\n)(' + re_OL.replace(/\s*$/, "") + '|' + re_UL.replace(/\s*$/, "") + ')';
+            if (s.before.match(new RegExp(match + '$'))) {
+                EA.value = s.before.replace(new RegExp(match + '$'), '$1 $2 ') + s.value + s.after;
                 editor.select(s.end + 2, function() {
                     editor.updateHistory();
                 });
@@ -638,20 +664,20 @@ var MTE = function(elem, o) {
         if (k == 13) {
 
             // Automatic list increment
-            var listItems = /(?:^|\n)( *)([0-9]+\.|[-+*])( *)(.*?)$/;
+            var listItems = new RegExp('(?:^|\\n)( *)(' + re_OL + '|' + re_UL + ')( *)(.*?)$');
             if (s.before.match(listItems)) {
                 var take = listItems.exec(s.before),
-                    list = /[0-9]+\./.test(take[2]) ? opt.OL.replace(/%d/g, (parseInt(take[2], 10) + 1)) : take[2]; // `<ol>` or `<ul>` ?
+                    list = new RegExp(re_OL).test(take[2]) ? opt.OL.replace(/%d/g, (parseInt(take[2], 10) + 1)) : take[2]; // `<ol>` or `<ul>` ?
                 editor.insert('\n' + take[1] + list + take[3], null);
                 EA.scrollTop = scroll;
                 return false;
             }
 
             // Automatic indentation
-            var indentBefore = (new RegExp('(?:^|\n)((' + opt.tabSize + ')+)(.*?)$')).exec(s.before),
+            var indentBefore = (new RegExp('(?:^|\\n)((' + re_TAB + ')+)(.*?)$')).exec(s.before),
                 indent = indentBefore ? indentBefore[1] : "";
             if (s.before.match(/[\(\{\[]$/) && s.after.match(/^[\]\}\)]/) || s.before.match(/<[^\/]*?>$/) && s.after.match(/^<\//)) {
-                editor.insert('\n' + indent + opt.tabSize + '\n' + indent, function() {
+                editor.insert('\n' + indent + re_TAB + '\n' + indent, function() {
                     editor.select(s.start + indent.length + opt.tabSize.length + 1, function() {
                         editor.updateHistory();
                     });
@@ -672,14 +698,21 @@ var MTE = function(elem, o) {
             if (s.value.length === 0) {
 
                 // Remove empty list item quickly
-                if(s.before.match(/ *([0-9]+\.|[-+*]) *$/)) {
-                    editor.outdent(' *([0-9]+\.|[-+*]) *');
+                var match = ' *(' + re_OL + '|' + re_UL + ')';
+                if(s.before.match(new RegExp(match + '$'))) {
+                    editor.outdent(match);
                     return false;
                 }
 
                 // Remove indentation quickly
-                if(s.before.match(new RegExp(opt.tabSize + '$'))) {
-                    editor.outdent(opt.tabSize);
+                if(s.before.match(new RegExp(re_TAB + '$'))) {
+                    editor.outdent(re_TAB);
+                    return false;
+                }
+
+                // Remove HTML tag quickly
+                if (s.before.match(/<\/?[^>]*?>$/)) {
+                    editor.outdent('<\/?[^>]*?>');
                     return false;
                 }
 
