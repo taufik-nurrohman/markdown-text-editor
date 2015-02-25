@@ -3,7 +3,7 @@ Markdown Text Editor Plugin
 
 As mentioned in the title above.
 
-**2014-09-04:** [The HTML version of this editor is available!](/tovic/html-text-editor "HTE – HTML Text Editor")
+**2014-09-04:** [The HTML version of this editor is available!](https://github.com/tovic/html-text-editor "HTE – HTML Text Editor")
 
 Demo
 ----
@@ -15,7 +15,7 @@ Demo
 Requires
 --------
 
- * [This](/tovic/simple-text-editor-library "Simple Text Editor Library") text editor library
+ * [This](https://github.com/tovic/simple-text-editor-library "Simple Text Editor Library") text editor library
  * Icon fonts from [Font Awesome](https://fortawesome.github.io/Font-Awesome/icons "Font Awesome Icons")
 
 Basic Usage
