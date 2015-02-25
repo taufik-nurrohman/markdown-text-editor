@@ -81,7 +81,8 @@ var MTE = function(elem, o) {
         };
 
     var overlay = doc.createElement('div'),
-        modal = doc.createElement('div');
+        modal = doc.createElement('div'),
+        noop = function() {};
 
     // Base Modal
     base.modal = function(type, callback) {
