@@ -2,7 +2,6 @@
 .editor-toolbar {
   display:block;
   margin:0 1px;
-  height:20px;
   line-height:20px;
   font-size:14px;
   zoom:1;
@@ -19,7 +18,7 @@
   color:#87ceeb;
   text-decoration:none !important;
   width:20px;
-  height:inherit;
+  height:20px;
   text-align:center;
   margin:0 4px 4px 0;
 }

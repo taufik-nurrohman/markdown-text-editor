@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.1.6
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.1.7
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -37,6 +37,7 @@ var MTE = function(elem, o) {
             UL: '- ',
             OL: '%d. ',
             HR: '---',
+            CODE: '`',
             PRE: '    ', // Use ~~~\n%s\n~~~ or ```\n%s\n``` to enable fenced code block syntax in "Markdown Extra"
             buttons: {
                 ok: 'OK',
@@ -257,20 +258,47 @@ var MTE = function(elem, o) {
         return value;
     }
 
+    function insert(chars, s) {
+        editor.insert(chars, function() {
+            editor.select(s.end + 1);
+        });
+        return false;
+    }
+
+    function trim(str) {
+        return str.replace(/^\s+|\s+$/g, "");
+    }
+
+    function _trim(str) {
+        return str.replace(/^\s+/, "");
+    }
+
+    function trim_(str) {
+        return str.replace(/\s+$/, "");
+    }
+
+    function escape(str) {
+        return str.replace(editor.escape, '\\$1');
+    }
+
     var opt = extend(defaults, o), nav = doc.createElement('span');
 
     // Escapes for `RegExp()`
-    var re_ = /([!$^*\(\)\-+=\{\}\[\].,?\\\/])/g,
-        // re_UL = opt.UL.replace(re_, '\\$1').replace(/\s*$/, ""),
-        re_UL = opt.UL.replace(re_, '\\$1').replace(/\\[-+*]/g, '[-+*]'),
-        re_OL = opt.OL.replace(re_, '\\$1').replace(/%d/g, '[0-9]+'),
-        re_TAB = opt.tabSize.replace(re_, '\\$1'),
-        re_PRE = opt.PRE.replace(re_, '\\$1');
+    var re_UL = escape(opt.UL).replace(/\\[-+*]/g, '[-+*]'),
+        re_OL = escape(opt.OL).replace(/%d/g, '[0-9]+'),
+        re_TAB = escape(opt.tabSize),
+        re_PRE = escape(opt.PRE);
 
     if (opt.toolbar) {
         nav.className = opt.toolbarClass;
         editor.area.parentNode.insertBefore(nav, opt.toolbarPosition == "before" ? editor.area : null);
     }
+
+    var release = doc.createElement('a');
+        release.href = '#esc:' + (new Date()).getTime();
+        release.style.width = 0;
+        release.style.height = 0;
+    editor.area.parentNode.insertBefore(release, null);
 
     base.button = function(key, data) {
         if (data.title === false) return;
@@ -313,44 +341,58 @@ var MTE = function(elem, o) {
         'bold': {
             title: btn.bold,
             click: function() {
-                editor.toggle(opt.STRONG, opt.STRONG);
+                var strong = opt.STRONG;
+                editor.toggle(strong, strong);
             }
         },
         'italic': {
             title: btn.italic,
             click: function() {
-                editor.toggle(opt.EM, opt.EM);
+                var em = opt.EM;
+                editor.toggle(em, em);
             }
         },
         'code': {
             title: btn.code,
             click: function() {
-                var v = editor.selection().value;
+                var v = editor.selection().value,
+                    code = opt.CODE,
+                    pre = opt.PRE;
                 if (v.indexOf('\n') !== -1 && v.length > 0) {
-                    if (opt.PRE.indexOf('%s') === -1) {
+                    if (pre.indexOf('%s') === -1) {
                         var match = '(' + re_PRE + '|\\t| {4})';
                         if (v.match(new RegExp('^' + match))) {
-                            editor.outdent(match);
+                            editor.outdent(pre);
                         } else {
-                            editor.indent(re_PRE);
+                            editor.indent(pre);
                         }
                     } else {
-                        var wrap = opt.PRE.split('%s');
-                        editor.toggle(wrap[0], wrap[1] ? wrap[1] : wrap[0]);
+                        var wrap = pre.split('%s');
+                        editor.toggle(wrap[0], wrap[1] || wrap[0]);
                     }
                 } else {
-                    editor.toggle('`', '`');
+                    editor.toggle(code, code);
                 }
             }
         },
         'quote-right': {
             title: btn.quote,
             click: function() {
-                var v = editor.selection().value;
-                if (v[0] === '>') {
-                    editor.outdent('> ');
+                var s = editor.selection(),
+                    clean_B = trim_(s.before),
+                    clean_V = trim(s.value),
+                    clean_A = _trim(s.after),
+                    s_B = clean_B.length > 0 ? '\n\n' : "",
+                    v = clean_V, end;
+                if (clean_V.length === 0) clean_V = opt.placeholders.text;
+                if (v.length > 0) {
+                    editor[v[0] == '>' ? 'outdent' : 'indent']('> ');
                 } else {
-                    editor.indent('> ');
+                    editor.area.value = clean_B + s_B + '> ' + clean_V + '\n\n' + clean_A;
+                    end = clean_B.length + s_B.length + 2;
+                    editor.select(end, end + clean_V.length, function() {
+                        editor.updateHistory();
+                    });
                 }
             }
         },
@@ -358,31 +400,33 @@ var MTE = function(elem, o) {
             title: btn.heading,
             click: function() {
                 var s = editor.selection(),
-                    h = ["", "", "", '### ', '#### ', '##### ', '###### '];
+                    h = ["", '=', '-', '### ', '#### ', '##### ', '###### '],
+                    clean_B = trim_(s.before.replace(/#+ $/, "")),
+                    clean_V = trim(s.value.replace(/#+ |\n+[-=]+/, "").replace(/\n+/g, ' ')),
+                    clean_A = _trim(s.after.replace(/^\n+[-=]+/, "")),
+                    s_B = clean_B.length > 0 ? '\n\n' : "", end;
                 T = T < h.length - 1 ? T + 1 : 0;
                 if (s.value.length > 0) {
-                    var clean_B = s.before.replace(/\#+ $/, ""),
-                        clean_V = s.value.replace(/^\#+ |\n+[-=]+/, "").replace(/\n+/g, ' '),
-                        clean_A = s.after.replace(/\n+[-=]+/, "");
                     if (T > 0 && T < 3) {
-                        editor.area.value = clean_B + clean_V + '\n' + clean_V.replace(/./g, T === 1 ? '=' : '-') + clean_A;
-                        editor.select(clean_B.length, clean_B.length + clean_V.length, function() {
+                        editor.area.value = clean_B + s_B + clean_V + '\n' + clean_V.replace(/./g, h[T]) + '\n\n' + clean_A;
+                        end = clean_B.length + s_B.length;
+                        editor.select(end, end + clean_V.length, function() {
                             editor.updateHistory();
                         });
                     } else {
-                        editor.area.value = clean_B + h[T] + clean_V + clean_A;
-                        editor.select(clean_B.length + h[T].length, clean_B.length + h[T].length + clean_V.length, function() {
+                        editor.area.value = clean_B + s_B + h[T] + clean_V + '\n\n' + clean_A;
+                        end = clean_B.length + s_B.length + h[T].length;
+                        editor.select(end, end + clean_V.length, function() {
                             editor.updateHistory();
                         });
                     }
                 } else {
                     var placeholder = opt.placeholders.heading_text;
                     T = 1;
-                    editor.insert(placeholder + '\n' + placeholder.replace(/./g, '='), function() {
-                        s = editor.selection().end - 1;
-                        editor.select(s - (placeholder.length * 2), s - placeholder.length, function() {
-                            editor.updateHistory();
-                        });
+                    editor.area.value = clean_B + s_B + placeholder + '\n' + placeholder.replace(/./g, h[T]) + '\n\n' + clean_A;
+                    end = clean_B.length + s_B.length;
+                    editor.select(end, end + placeholder.length, function() {
+                        editor.updateHistory();
                     });
                 }
             }
@@ -409,15 +453,22 @@ var MTE = function(elem, o) {
             title: btn.image,
             click: function() {
                 base.prompt(opt.prompts.image_url_title, opt.prompts.image_url, true, function(r) {
-                    var alt = decodeURIComponent(
-                        r.substring(
-                            r.lastIndexOf('/') + 1, r.lastIndexOf('.')
-                        ).replace(/[-+._]+/g, ' ')
-                    ).toLowerCase().replace(/(?:^|\s)\S/g, function(a) {
-                        return a.toUpperCase();
-                    });
+                    var s = editor.selection(),
+                        clean_B = trim_(s.before),
+                        clean_A = _trim(s.after),
+                        s_B = clean_B.length > 0 ? '\n\n' : "",
+                        alt = decodeURIComponent(
+                            r.substring(
+                                r.lastIndexOf('/') + 1, r.lastIndexOf('.')
+                            ).replace(/[-+._]+/g, ' ')
+                        ).toLowerCase().replace(/(?:^|\s)\S/g, function(a) {
+                            return a.toUpperCase();
+                        });
                     alt = alt.indexOf('/') === -1 && r.indexOf('.') !== -1 ? alt : opt.placeholders.image_alt;
-                    editor.insert('\n![' + alt + '](' + r + ')\n');
+                    editor.area.value = clean_B + s_B + '![' + alt + '](' + r + ')\n\n' + clean_A;
+                    editor.select(clean_B.length + s_B.length + 2 + alt.length + 2 + r.length + 3, function() {
+                        editor.updateHistory();
+                    });
                 });
             }
         },
@@ -472,7 +523,14 @@ var MTE = function(elem, o) {
         'ellipsis-h': {
             title: btn.rule,
             click: function() {
-                editor.insert('\n' + opt.HR + '\n');
+                var s = editor.selection(),
+                    clean_B = trim_(s.before),
+                    clean_A = _trim(s.after),
+                    s_B = clean_B.length > 0 ? '\n\n' : "";
+                editor.area.value = clean_B + s_B + opt.HR + '\n\n' + clean_A;
+                editor.select(clean_B.length + s_B.length + opt.HR.length + 2, function() {
+                    editor.updateHistory();
+                });
             }
         },
         'undo': {
@@ -491,11 +549,16 @@ var MTE = function(elem, o) {
 
     for (var i in toolbars) base.button(i, toolbars[i]);
 
-    var insert = function(chars, s) {
-        editor.insert(chars, function() {
-            editor.select(s.end + 1);
-        });
-        return false;
+    editor.area.oncut = function() {
+        win.setTimeout(function() {
+            editor.updateHistory();
+        }, 1);
+    };
+
+    editor.area.onpaste = function() {
+        win.setTimeout(function() {
+            editor.updateHistory();
+        }, 1);
     };
 
     editor.area.onkeydown = function(e) {
@@ -565,7 +628,7 @@ var MTE = function(elem, o) {
 
         // `Shift + Tab` to outdent
         if (shift && k == 9) {
-            editor.outdent('( *' + re_OL + '| *' + re_UL + '|> *|' + re_TAB + ')');
+            editor.outdent('( *' + re_OL + '| *' + re_UL + '|> *|' + re_TAB + ')', 1, true);
             return false;
         }
 
@@ -581,7 +644,7 @@ var MTE = function(elem, o) {
                 return false;
             }
             // `Tab` to indent
-            editor.indent(re_TAB);
+            editor.indent(opt.tabSize);
             return false;
         }
 
@@ -650,7 +713,7 @@ var MTE = function(elem, o) {
         // Add a space at the beginning of the list item when user start
         // pressing the space bar after typing `1.` or `*` or `-` or `+`
         if (k == 32) {
-            var match = '(^|\\n)(' + re_OL.replace(/\s*$/, "") + '|' + re_UL.replace(/\s*$/, "") + ')';
+            var match = '(^|\\n)(' + trim_(re_OL) + '|' + trim_(re_UL) + ')';
             if (s.before.match(new RegExp(match + '$'))) {
                 EA.value = s.before.replace(new RegExp(match + '$'), '$1 $2 ') + s.value + s.after;
                 editor.select(s.end + 2, function() {
@@ -663,12 +726,12 @@ var MTE = function(elem, o) {
         // `Enter` key was pressed
         if (k == 13) {
 
-            // Automatic list increment
-            var listItems = new RegExp('(?:^|\\n)( *)(' + re_OL + '|' + re_UL + ')( *)(.*?)$');
+            // Automatic list (+blockquote) increment
+            var listItems = new RegExp('(?:^|\\n)( *)(' + re_OL + '|' + re_UL + '|>)( *)(.*?)$');
             if (s.before.match(listItems)) {
                 var take = listItems.exec(s.before),
                     list = new RegExp(re_OL).test(take[2]) ? opt.OL.replace(/%d/g, (parseInt(take[2], 10) + 1)) : take[2]; // `<ol>` or `<ul>` ?
-                editor.insert('\n' + take[1] + list + take[3], null);
+                editor.insert('\n' + take[1] + list + take[3], 1);
                 EA.scrollTop = scroll;
                 return false;
             }
@@ -697,22 +760,22 @@ var MTE = function(elem, o) {
 
             if (s.value.length === 0) {
 
-                // Remove empty list item quickly
-                var match = ' *(' + re_OL + '|' + re_UL + ')';
+                // Remove empty list item (+blockquote) quickly
+                var match = ' *(' + re_OL + '|' + re_UL + '|> )';
                 if(s.before.match(new RegExp(match + '$'))) {
-                    editor.outdent(match);
+                    editor.outdent(match, 1, true);
                     return false;
                 }
 
                 // Remove indentation quickly
                 if(s.before.match(new RegExp(re_TAB + '$'))) {
-                    editor.outdent(re_TAB);
+                    editor.outdent(opt.tabSize);
                     return false;
                 }
 
                 // Remove HTML tag quickly
                 if (s.before.match(/<\/?[^>]*?>$/)) {
-                    editor.outdent('<\/?[^>]*?>');
+                    editor.outdent('<\/?[^>]*?>', 1, true);
                     return false;
                 }
 
@@ -764,8 +827,16 @@ var MTE = function(elem, o) {
 
         }
 
+        // `Esc` to release focus from `<textarea>`
+        if (k == 27) {
+            release.focus();
+            return false;
+        }
+
         if (!alt && !ctrl && !shift) {
-            editor.updateHistory();
+            win.setTimeout(function() {
+                editor.updateHistory();
+            }, 1);
         }
 
     };
