@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.1.7
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.1.8
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -84,6 +84,53 @@ var MTE = function(elem, o) {
         modal = doc.createElement('div'),
         noop = function() {};
 
+    function extend(target, source) {
+        target = target || {};
+        for (var prop in source) {
+            if (typeof source[prop] == "object") {
+                target[prop] = extend(target[prop], source[prop]);
+            } else {
+                target[prop] = source[prop];
+            }
+        }
+        return target;
+    }
+
+    function css(elem, rule) {
+        var ruleJS = rule.replace(/\-(\w)/g, function(match, $1) {
+            return $1.toUpperCase();
+        }), value = 0;
+        if (doc.defaultView && doc.defaultView.getComputedStyle) {
+            value = doc.defaultView.getComputedStyle(elem, null).getPropertyValue(rule);
+        } else {
+            value = elem.style[ruleJS];
+        }
+        return value;
+    }
+
+    function insert(chars, s) {
+        editor.insert(chars, function() {
+            editor.select(s.end + 1);
+        });
+        return false;
+    }
+
+    function trim(str) {
+        return str.replace(/^\s+|\s+$/g, "");
+    }
+
+    function _trim(str) {
+        return str.replace(/^\s+/, "");
+    }
+
+    function trim_(str) {
+        return str.replace(/\s+$/, "");
+    }
+
+    function escape(str) {
+        return str.replace(editor.escape, '\\$1');
+    }
+
     // Base Modal
     base.modal = function(type, callback) {
         type = type || 'modal';
@@ -124,16 +171,16 @@ var MTE = function(elem, o) {
     base.close = function(select) {
         if (overlay) doc.body.removeChild(overlay);
         if (modal) doc.body.removeChild(modal);
-        if (typeof select != "undefined" && select === true) {
+        if (select && select !== false) {
             var s = editor.selection();
             editor.select(s.start, s.end);
         }
     };
 
     // Custom Prompt Modal
-    base.prompt = function(title, value, isRequired, callback) {
+    base.prompt = function(title, value, required, callback) {
         base.modal('prompt', function(o, m) {
-            var onSuccess = function(value) {
+            var success = function(value) {
                 if (typeof callback == "function") {
                     base.close();
                     callback(value);
@@ -145,19 +192,19 @@ var MTE = function(elem, o) {
                 input.type = "text";
                 input.value = value;
                 input.onkeyup = function(e) {
-                    if (isRequired) {
-                        if (e.keyCode == 13 && this.value !== "" && this.value !== value) onSuccess(this.value);
+                    if (required) {
+                        if (e.keyCode == 13 && this.value !== "" && this.value !== value) success(this.value);
                     } else {
-                        if (e.keyCode == 13) onSuccess(this.value == value ? "" : this.value);
+                        if (e.keyCode == 13) success(this.value == value ? "" : this.value);
                     }
                 };
             var OK = doc.createElement('button');
                 OK.innerHTML = opt.buttons.ok;
                 OK.onclick = function() {
-                    if (isRequired) {
-                        if (input.value !== "" && input.value !== value) onSuccess(input.value);
+                    if (required) {
+                        if (input.value !== "" && input.value !== value) success(input.value);
                     } else {
-                        onSuccess(input.value == value ? "" : input.value);
+                        success(input.value == value ? "" : input.value);
                     }
                 };
             var CANCEL = doc.createElement('button');
@@ -235,52 +282,44 @@ var MTE = function(elem, o) {
         });
     };
 
-    function extend(target, source) {
-        target = target || {};
-        for (var prop in source) {
-            if (typeof source[prop] == "object") {
-                target[prop] = extend(target[prop], source[prop]);
-            } else {
-                target[prop] = source[prop];
-            }
-        }
-        return target;
-    }
-
-    function css(elem, rule) {
-        var ruleJS = rule.replace(/\-(\w)/g, function(match, $1) {
-            return $1.toUpperCase();
-        }), value = 0;
-        if (doc.defaultView && doc.defaultView.getComputedStyle) {
-            value = doc.defaultView.getComputedStyle(elem, null).getPropertyValue(rule);
+    // Scroll the `<textarea>`
+    base.scroll = function(pos, callback) {
+        var EA = editor.area;
+        if (typeof pos == "number") {
+            EA.scrollTop = pos;
         } else {
-            value = elem.style[ruleJS];
+            EA.scrollTop += parseInt(css(EA, 'line-height'), 10);
         }
-        return value;
-    }
+        if (typeof callback == "function") callback();
+    };
 
-    function insert(chars, s) {
-        editor.insert(chars, function() {
-            editor.select(s.end + 1);
-        });
-        return false;
-    }
-
-    function trim(str) {
-        return str.replace(/^\s+|\s+$/g, "");
-    }
-
-    function _trim(str) {
-        return str.replace(/^\s+/, "");
-    }
-
-    function trim_(str) {
-        return str.replace(/\s+$/, "");
-    }
-
-    function escape(str) {
-        return str.replace(editor.escape, '\\$1');
-    }
+    // Time
+    base.time = function(output) {
+        var time = new Date(),
+            year = time.getFullYear(),
+            month = (time.getMonth() + 1),
+            date = time.getDate(),
+            hour = time.getHours(),
+            minute = time.getMinutes(),
+            second = time.getSeconds(),
+            millisecond = time.getMilliseconds();
+        if (month < 10) month = '0' + month;
+        if (date < 10) date = '0' + date;
+        if (hour < 10) hour = '0' + hour;
+        if (minute < 10) minute = '0' + minute;
+        if (second < 10) second = '0' + second;
+        if (millisecond < 10) millisecond = '0' + millisecond;
+        var o = {
+            'Y': "" + year,
+            'm': "" + month,
+            'd': "" + date,
+            'H': "" + hour,
+            'i': "" + minute,
+            's': "" + second,
+            'u': "" + millisecond
+        };
+        return typeof output != "undefined" ? o[output] : o;
+    };
 
     var opt = extend(defaults, o), nav = doc.createElement('span');
 
@@ -299,7 +338,7 @@ var MTE = function(elem, o) {
         release.href = '#esc:' + (new Date()).getTime();
         release.style.width = 0;
         release.style.height = 0;
-    editor.area.parentNode.insertBefore(release, null);
+    editor.area.parentNode.appendChild(release);
 
     base.button = function(key, data) {
         if (data.title === false) return;
@@ -437,15 +476,13 @@ var MTE = function(elem, o) {
             click: function() {
                 var s = editor.selection(),
                     title, url, placeholder = opt.placeholders.link_text;
-                base.prompt(opt.prompts.link_title_title, opt.prompts.link_title, false, function(r) {
-                    title = r;
-                    base.prompt(opt.prompts.link_url_title, opt.prompts.link_url, true, function(r) {
-                        url = r;
-                        editor.wrap('[' + (s.value.length === 0 ? placeholder : ""), '](' + url + (title !== "" ? ' \"' + title + '\"' : "") + ')', function() {
-                            editor.select(s.start + 1, (s.value.length === 0 ? s.start + placeholder.length + 1 : s.end + 1), function() {
-                                editor.updateHistory();
-                            });
-                        });
+                base.prompt(opt.prompts.link_url_title, opt.prompts.link_url, true, function(r) {
+                    url = r;
+                    base.prompt(opt.prompts.link_title_title, opt.prompts.link_title, false, function(r) {
+                        title = r;
+                        editor.wrap('[', '](' + url + (title !== "" ? ' \"' + title + '\"' : "") + ')', (s.value.length === 0 ? function() {
+                            editor.replace(/^/, placeholder);
+                        } : 1));
                     });
                 });
             }
@@ -569,8 +606,7 @@ var MTE = function(elem, o) {
             k = e.keyCode,
             ctrl = e.ctrlKey,
             shift = e.shiftKey,
-            alt = e.altKey,
-            scroll = EA.scrollTop + parseInt(css(EA, 'line-height'), 10);
+            alt = e.altKey;
 
         win.setTimeout(function() {
             opt.keydown(e, base);
@@ -733,7 +769,7 @@ var MTE = function(elem, o) {
                 var take = listItems.exec(s.before),
                     list = new RegExp(re_OL).test(take[2]) ? opt.OL.replace(/%d/g, (parseInt(take[2], 10) + 1)) : take[2]; // `<ol>` or `<ul>` ?
                 editor.insert('\n' + take[1] + list + take[3], 1);
-                EA.scrollTop = scroll;
+                base.scroll();
                 return false;
             }
 
@@ -746,12 +782,12 @@ var MTE = function(elem, o) {
                         editor.updateHistory();
                     });
                 });
-                EA.scrollTop = scroll;
+                base.scroll();
                 return false;
             }
 
             editor.insert('\n' + indent);
-            EA.scrollTop = scroll;
+            base.scroll();
             return false;
 
         }

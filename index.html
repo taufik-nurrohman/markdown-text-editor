@@ -36,7 +36,7 @@ List Item</textarea>
     var myEditor = new MTE(document.getElementById('editor-area'), {
         tabSize: '    ',
         shortcut: true,
-        keydown: function(e) {
+        keydown: function(e, base) {
             console.log('Updated! (keydown:' + e.keyCode + ')');
         },
         click: function(e, base, type) {
