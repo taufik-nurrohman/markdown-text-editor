@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.1.8
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.1.9
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -131,6 +131,14 @@ var MTE = function(elem, o) {
         return str.replace(editor.escape, '\\$1');
     }
 
+    var opt = extend(defaults, o), nav = doc.createElement('span');
+
+    // Escapes for `RegExp()`
+    var re_UL = escape(opt.UL).replace(/\\[-+*]/g, '[-+*]'),
+        re_OL = escape(opt.OL).replace(/%d/g, '[0-9]+'),
+        re_TAB = escape(opt.tabSize),
+        re_PRE = escape(opt.PRE);
+
     // Base Modal
     base.modal = function(type, callback) {
         type = type || 'modal';
@@ -142,7 +150,7 @@ var MTE = function(elem, o) {
         };
         modal.className = 'custom-modal custom-modal-' + type;
         modal.innerHTML = '<div class="custom-modal-header custom-modal-' + type + '-header"></div><div class="custom-modal-content custom-modal-' + type + '-content"></div><div class="custom-modal-action custom-modal-' + type + '-action"></div>';
-        modal.style.visibility = "hidden";
+        modal.style.visibility = 'hidden';
         page.appendChild(overlay);
         page.appendChild(modal);
         win.setTimeout(function() {
@@ -153,7 +161,7 @@ var MTE = function(elem, o) {
             modal.style.left = '50%';
             modal.style.zIndex = '9999';
             modal.style.marginTop = (scroll - (h / 2)) + 'px';
-            modal.style.marginLeft = '-' + (w / 2) + 'px';
+            modal.style.marginLeft = (0 - (w / 2)) + 'px';
             modal.style.visibility = "";
             if (modal.offsetTop < 0) {
                 modal.style.top = 0;
@@ -321,14 +329,6 @@ var MTE = function(elem, o) {
         return typeof output != "undefined" ? o[output] : o;
     };
 
-    var opt = extend(defaults, o), nav = doc.createElement('span');
-
-    // Escapes for `RegExp()`
-    var re_UL = escape(opt.UL).replace(/\\[-+*]/g, '[-+*]'),
-        re_OL = escape(opt.OL).replace(/%d/g, '[0-9]+'),
-        re_TAB = escape(opt.tabSize),
-        re_PRE = escape(opt.PRE);
-
     if (opt.toolbar) {
         nav.className = opt.toolbarClass;
         editor.area.parentNode.insertBefore(nav, opt.toolbarPosition == "before" ? editor.area : null);
@@ -354,16 +354,19 @@ var MTE = function(elem, o) {
             };
         if (data.title) a.title = data.title;
         if (data.position) {
-            nav.insertBefore(a, nav.children[data.position - 1]);
+            var pos = data.position < 0 ? data.position + nav.children.length + 1 : data.position - 1;
+            nav.insertBefore(a, nav.children[pos]);
         } else {
             nav.appendChild(a);
         }
     };
 
-    editor.toggle = function(open, close, callback) {
+    editor.toggle = function(open, close, callback, placeholder) {
         var s = editor.selection();
         if (s.before.slice(-open.length) != open && s.after.slice(0, close.length) != close) {
-            editor.wrap(open, close);
+            editor.wrap(open, close, (s.value.length === 0 && placeholder ? function() {
+                editor.replace(/^.*$/, placeholder === true ? opt.placeholders.text : placeholder);
+            } : 1));
         } else {
             var clean_B = s.before.slice(-open.length) == open ? s.before.substring(0, s.before.length - open.length) : s.before,
                 clean_A = s.after.substring(0, close.length) == close ? s.after.substring(close.length) : s.after;
@@ -382,14 +385,14 @@ var MTE = function(elem, o) {
             title: btn.bold,
             click: function() {
                 var strong = opt.STRONG;
-                editor.toggle(strong, strong);
+                editor.toggle(strong, strong, 1, true);
             }
         },
         'italic': {
             title: btn.italic,
             click: function() {
                 var em = opt.EM;
-                editor.toggle(em, em);
+                editor.toggle(em, em, 1, true);
             }
         },
         'code': {
@@ -411,7 +414,7 @@ var MTE = function(elem, o) {
                         editor.toggle(wrap[0], wrap[1] || wrap[0]);
                     }
                 } else {
-                    editor.toggle(code, code);
+                    editor.toggle(code, code, 1, true);
                 }
             }
         },
@@ -425,14 +428,18 @@ var MTE = function(elem, o) {
                     s_B = clean_B.length > 0 ? '\n\n' : "",
                     v = clean_V, end;
                 if (clean_V.length === 0) clean_V = opt.placeholders.text;
-                if (v.length > 0) {
-                    editor[v[0] == '>' ? 'outdent' : 'indent']('> ');
+                if (v == opt.placeholders.text) {
+                    editor.select(s.start, s.end);
                 } else {
-                    editor.area.value = clean_B + s_B + '> ' + clean_V + '\n\n' + clean_A;
-                    end = clean_B.length + s_B.length + 2;
-                    editor.select(end, end + clean_V.length, function() {
-                        editor.updateHistory();
-                    });
+                    if (v.length > 0) {
+                        editor[v[0] == '>' ? 'outdent' : 'indent']('> ');
+                    } else {
+                        editor.area.value = clean_B + s_B + '> ' + clean_V + '\n\n' + clean_A;
+                        end = clean_B.length + s_B.length + 2;
+                        editor.select(end, end + clean_V.length, function() {
+                            editor.updateHistory();
+                        });
+                    }
                 }
             }
         },
