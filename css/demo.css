@@ -8,7 +8,7 @@
 body {
   background-color:#333;
   font:normal normal 13px/1.4 Helmet,FreeSans,Sans-Serif;
-  color:#aaa;
+  color:#3c3c3c;
   text-shadow:0 1px 0 rgba(0,0,0,.2);
   padding:10px;
 }
@@ -17,7 +17,8 @@ textarea {
   overflow:auto;
   resize:vertical;
   background-color:#252525;
-  border:1px solid #3c3c3c;
+  border:1px solid;
+  border-color:inherit;
   padding:10px;
   width:100%;
   height:400px;

@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.2.0
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.2.1
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -17,8 +17,10 @@
 var MTE = function(elem, o) {
 
     // Backward Compatibility
-    if (typeof o.prompt != "undefined") o.prompts = o.prompt;
-    if (typeof o.placeholder != "undefined") o.placeholders = o.placeholder;
+    if ('prompt' in o) o.prompts = o.prompt;
+    if ('placeholder' in o) o.placeholders = o.placeholder;
+    if ('iconClassPrefix' in o) o.toolbarIconClass = o.iconClassPrefix + '%s';
+    if ('buttonClassPrefix' in o) o.toolbarButtonClass = o.buttonClassPrefix + '%s';
 
     var _u2018 = '\u2018', // left single quotation mark
         _u2019 = '\u2019', // right single quotation mark
@@ -34,6 +36,7 @@ var MTE = function(elem, o) {
         _u2122 = '\u2122', // trade mark sign
         _u00AE = '\u00AE', // registered sign
         _u00B1 = '\u00B1', // plus-minus sign
+        _u00D7 = '\u00D7', // multiplication sign
         _u00F7 = '\u00F7', // division sign
         _u00B0 = '\u00B0', // degree sign
         _u2039 = '\u2039', // left pointing single angle quotation mark
@@ -58,9 +61,16 @@ var MTE = function(elem, o) {
             toolbar: true,
             shortcut: false,
             toolbarClass: 'editor-toolbar',
+            toolbarIconClass: 'fa fa-%s',
+            toolbarButtonClass: 'editor-toolbar-button editor-toolbar-button-%s',
+            toolbarSeparatorClass: 'editor-toolbar-separator',
             toolbarPosition: "before", // before or after `<textarea>` ?
-            buttonClassPrefix: 'editor-toolbar-button editor-toolbar-button-', // for `<a class="editor-toolbar-button editor-toolbar-button-ICON_NAME"></a>`
-            iconClassPrefix: 'fa fa-', // for `<i class="fa fa-ICON_NAME"></i>`
+            dropClass: 'custom-drop custom-%s-drop',
+            modalClass: 'custom-modal custom-modal-%s',
+            modalHeaderClass: 'custom-modal-header custom-modal-%s-header',
+            modalContentClass: 'custom-modal-content custom-modal-%s-content',
+            modalFooterClass: 'custom-modal-action custom-modal-%s-action',
+            modalOverlayClass: 'custom-modal-overlay custom-modal-%s-overlay',
             STRONG: '**',
             EM: '_',
             UL: '- ',
@@ -106,11 +116,18 @@ var MTE = function(elem, o) {
             },
             keydown: function() {},
             click: function() {},
-            ready: function() {}
+            ready: function() {},
+            copy: function() {},
+            cut: function() {},
+            paste: function() {}
         };
 
-    var overlay = doc.createElement('div'),
+    var page = doc.body,
+        scroll = page.scrollTop || doc.documentElement.scrollTop,
+        overlay = doc.createElement('div'),
         modal = doc.createElement('div'),
+        drop = doc.createElement('div'),
+        button = null,
         noop = function() {},
 
         // Rewrite some methods for better JS minification
@@ -124,10 +141,42 @@ var MTE = function(elem, o) {
         _UPDATE_HISTORY = editor.updateHistory,
         _WRAP = editor.wrap;
 
+    function is_set(elem) {
+        return typeof elem !== "undefined";
+    }
+
+    function is_string(elem) {
+        return typeof elem === "string";
+    }
+
+    function is_number(elem) {
+        return typeof elem === "number";
+    }
+
+    function is_function(elem) {
+        return typeof elem === "function";
+    }
+
+    function is_object(elem) {
+        return typeof elem === "object";
+    }
+
+    function addEvent(elem, event, fn) {
+        event = 'on' + event;
+        if(is_function(elem[event])) {
+            fn = (function(fn_1, fn_2) {
+                return function() {
+                    return fn_1.apply(this, arguments), fn_2.apply(this, arguments);
+                }
+            })(elem[event], fn);
+        }
+        elem[event] = fn;
+    }
+
     function extend(target, source) {
         target = target || {};
         for (var prop in source) {
-            if (typeof source[prop] == "object") {
+            if (is_object(source[prop])) {
                 target[prop] = extend(target[prop], source[prop]);
             } else {
                 target[prop] = source[prop];
@@ -171,6 +220,10 @@ var MTE = function(elem, o) {
         return str.replace(editor.escape, '\\$1');
     }
 
+    function node_exist(node) {
+        return node.parentNode;
+    }
+
     var opt = extend(defaults, o),
         nav = doc.createElement('span');
 
@@ -180,57 +233,97 @@ var MTE = function(elem, o) {
         re_TAB = escape(opt.tabSize),
         re_PRE = escape(opt.PRE);
 
+    // Base Event Listener
+    base.event = function(event, elem, fn) {
+        return addEvent(elem, event, fn);
+    };
+
     // Base Modal
-    base.modal = function(type, callback) {
-        type = type || 'modal';
-        var page = doc.body,
-            scroll = page.scrollTop || doc.documentElement.scrollTop;
-        overlay.className = 'custom-modal-overlay custom-modal-' + type + '-overlay';
-        overlay.onclick = function() {
-            base.close(true);
-        };
-        modal.className = 'custom-modal custom-modal-' + type;
-        modal.innerHTML = '<div class="custom-modal-header custom-modal-' + type + '-header"></div><div class="custom-modal-content custom-modal-' + type + '-content"></div><div class="custom-modal-action custom-modal-' + type + '-action"></div>';
-        modal.style.visibility = 'hidden';
+    base.modal = function(type, callback, offset) {
+        if (is_function(type)) {
+            offset = callback;
+            callback = type;
+            type = 'default';
+        }
+        type = type || 'default';
+        offset = offset || {};
+        overlay.className = opt.modalOverlayClass.replace(/%s/g, type);
+        modal.className = opt.modalClass.replace(/%s/g, type);
+        modal.innerHTML = '<div class="' + opt.modalHeaderClass.replace(/%s/g, type) + '"></div><div class="' + opt.modalContentClass.replace(/%s/g, type) + '"></div><div class="' + opt.modalFooterClass.replace(/%s/g, type) + '"></div>';
+        var m_s = modal.style;
+        m_s.visibility = 'hidden';
         page.appendChild(overlay);
         page.appendChild(modal);
         win.setTimeout(function() {
             var w = modal.offsetWidth,
                 h = modal.offsetHeight;
-            modal.style.position = 'absolute';
-            modal.style.top = '50%';
-            modal.style.left = '50%';
-            modal.style.zIndex = '9999';
-            modal.style.marginTop = (scroll - (h / 2)) + 'px';
-            modal.style.marginLeft = (0 - (w / 2)) + 'px';
-            modal.style.visibility = "";
-            if (modal.offsetTop < 0) {
-                modal.style.top = 0;
-                modal.style.marginTop = 0;
+            m_s.position = 'absolute';
+            m_s.top = 'top' in offset ? offset.top + 'px' : '50%';
+            m_s.left = 'left' in offset ? offset.left + 'px' : '50%';
+            m_s.zIndex = '9999';
+            m_s.marginTop = ('top' in offset ? "" : scroll - (h / 2)) + 'px';
+            m_s.marginLeft = ('left' in offset ? "" : 0 - (w / 2)) + 'px';
+            m_s.visibility = "";
+            if (modal.offsetTop < 0 && !'top' in offset) {
+                m_s.top = 0;
+                m_s.marginTop = "";
             }
-            if (modal.offsetLeft < 0) {
-                modal.style.left = 0;
-                modal.style.marginLeft = 0;
+            if (modal.offsetLeft < 0 && !'left' in offset) {
+                m_s.left = 0;
+                m_s.marginLeft = "";
             }
         }, 10);
-        if (typeof callback == "function") callback(overlay, modal);
+        if (is_function(callback)) callback(overlay, modal);
     };
 
-    // Close Modal
-    base.close = function(select) {
-        if (overlay) doc.body.removeChild(overlay);
-        if (modal) doc.body.removeChild(modal);
-        if (select && select !== false) {
-            var s = _SELECTION();
-            _SELECT(s.start, s.end);
+    // Base Drop
+    base.drop = function(type, callback, offset) {
+        if (is_function(type)) {
+            offset = callback;
+            callback = type;
+            type = 'default';
         }
+        if (!offset && button) {
+            offset = {
+                top: button.offsetTop + button.offsetHeight, // drop!
+                left: button.offsetLeft
+            };
+        }
+        type = type || 'default';
+        offset = offset || {};
+        drop.className = opt.dropClass.replace(/%s/g, type);
+        var d_s = drop.style;
+        d_s.visibility = 'hidden';
+        page.appendChild(drop);
+        win.setTimeout(function() {
+            var w = drop.offsetWidth,
+                h = drop.offsetHeight,
+                p_w = page.offsetWidth,
+                p_h = page.offsetHeight;
+            d_s.position = 'absolute';
+            d_s.top = 'top' in offset ? offset.top + 'px' : '50%';
+            d_s.left = 'left' in offset ? offset.left + 'px' : '50%';
+            d_s.zIndex = '9999';
+            d_s.marginTop = ('top' in offset ? "" : scroll - (h / 2)) + 'px';
+            d_s.marginLeft = ('left' in offset ? "" : 0 - (w / 2)) + 'px';
+            d_s.visibility = "";
+            if (offset.top + h > p_h) {
+                d_s.top = (p_h - h) + 'px';
+                d_s.marginTop = "";
+            }
+            if (offset.left + w > p_w) {
+                d_s.left = (p_w - w) + 'px';
+                d_s.marginLeft = "";
+            }
+        }, 10);
+        if (is_function(callback)) callback(drop);
     };
 
     // Custom Prompt Modal
-    base.prompt = function(title, value, required, callback) {
+    base.prompt = function(title, value, required, callback, offset) {
         base.modal('prompt', function(o, m) {
             var success = function(value) {
-                if (typeof callback == "function") {
+                if (is_function(callback)) {
                     base.close();
                     callback(value);
                 } else {
@@ -238,29 +331,34 @@ var MTE = function(elem, o) {
                 }
             };
             var input = doc.createElement('input');
-                input.type = "text";
+                input.type = 'text';
                 input.value = value;
-                input.onkeyup = function(e) {
-                    if (required) {
-                        if (e.keyCode == 13 && this.value !== "" && this.value !== value) success(this.value);
-                    } else {
-                        if (e.keyCode == 13) success(this.value == value ? "" : this.value);
+            addEvent(input, "keydown", function(e) {
+                if (required) {
+                    if (e.keyCode == 13 && this.value !== "" && this.value !== value) {
+                        return success(this.value), false;
                     }
-                };
+                } else {
+                    if (e.keyCode == 13) {
+                        return success(this.value == value ? "" : this.value), false;
+                    }
+                }
+            });
             var OK = doc.createElement('button');
                 OK.innerHTML = opt.buttons.ok;
-                OK.onclick = function() {
-                    if (required) {
-                        if (input.value !== "" && input.value !== value) success(input.value);
-                    } else {
-                        success(input.value == value ? "" : input.value);
-                    }
-                };
+            addEvent(OK, "click", function() {
+                if (required) {
+                    if (input.value !== "" && input.value !== value) success(input.value);
+                } else {
+                    success(input.value == value ? "" : input.value);
+                }
+                return false;
+            });
             var CANCEL = doc.createElement('button');
                 CANCEL.innerHTML = opt.buttons.cancel;
-                CANCEL.onclick = function() {
-                    base.close(true);
-                };
+            addEvent(CANCEL, "click", function() {
+                return base.close(true), false;
+            });
             m.children[0].innerHTML = title ? title : "";
             m.children[1].appendChild(input);
             m.children[2].appendChild(OK);
@@ -269,76 +367,90 @@ var MTE = function(elem, o) {
             win.setTimeout(function() {
                 input.select();
             }, 10);
-        });
+        }, offset);
     };
 
     // Custom Alert Modal
-    base.alert = function(title, message, callback) {
+    base.alert = function(title, message, callback, offset) {
         base.modal('alert', function(o, m) {
             var OK = doc.createElement('button');
                 OK.innerHTML = opt.buttons.ok;
-                OK.onclick = function() {
-                    if (typeof callback == "function") {
-                        base.close();
-                        callback();
-                    } else {
-                        base.close(true);
-                    }
-                };
+            addEvent(OK, "click", function() {
+                if (is_function(callback)) {
+                    base.close();
+                    callback();
+                } else {
+                    base.close(true);
+                }
+                return false;
+            });
             m.children[0].innerHTML = title ? title : "";
             m.children[1].innerHTML = message ? message : "";
             m.children[2].appendChild(OK);
-        });
+        }, offset);
     };
 
     // Custom Confirm Modal
-    base.confirm = function(title, message, callback) {
+    base.confirm = function(title, message, callback, offset) {
         base.modal('confirm', function(o, m) {
             var OK = doc.createElement('button');
                 OK.innerHTML = opt.buttons.ok;
-                OK.onclick = function() {
-                    if (typeof callback == "undefined") {
-                        base.close(true);
+            addEvent(OK, "click", function() {
+                if (is_set(callback)) {
+                    if (is_function(callback.OK)) {
+                        base.close();
+                        callback.OK();
                     } else {
-                        if (typeof callback.OK == "function") {
-                            base.close();
-                            callback.OK();
-                        } else {
-                            base.close(true);
-                        }
+                        base.close(true);
                     }
-                };
+                } else {
+                    base.close(true);
+                }
+                return false;
+            });
             var CANCEL = doc.createElement('button');
                 CANCEL.innerHTML = opt.buttons.cancel;
-                CANCEL.onclick = function() {
-                    if (typeof callback == "undefined") {
-                        base.close(true);
+            addEvent(CANCEL, "click", function() {
+                if (is_set(callback)) {
+                    if (is_function(callback.CANCEL)) {
+                        base.close();
+                        callback.CANCEL();
                     } else {
-                        if (typeof callback.CANCEL == "function") {
-                            base.close();
-                            callback.CANCEL();
-                        } else {
-                            base.close(true);
-                        }
+                        base.close(true);
                     }
-                    return false;
-                };
+                } else {
+                    base.close(true);
+                }
+                return false;
+            });
             m.children[0].innerHTML = title ? title : "";
             m.children[1].innerHTML = message ? message : "";
             m.children[2].appendChild(OK);
             m.children[2].appendChild(doc.createTextNode(' '));
             m.children[2].appendChild(CANCEL);
-        });
+        }, offset);
+    };
+
+    // Close Drop and Modal
+    base.close = function(select) {
+        if (node_exist(overlay)) page.removeChild(overlay);
+        if (node_exist(modal)) page.removeChild(modal);
+        if (node_exist(drop)) page.removeChild(drop);
+        if (select && select !== false) {
+            var s = _SELECTION();
+            if (!is_object(select)) select = {};
+            _SELECT(('start' in select ? select.start : s.start), ('end' in select ? select.end : s.end));
+        }
     };
 
     // Scroll the `<textarea>`
     base.scroll = function(pos, callback) {
-        if (typeof pos == "number") {
+        if (is_number(pos)) {
             _AREA.scrollTop = pos;
         } else {
             _AREA.scrollTop += parseInt(css(_AREA, 'line-height'), 10);
         }
-        if (typeof callback == "function") callback();
+        if (is_function(callback)) callback();
     };
 
     // Time
@@ -366,7 +478,7 @@ var MTE = function(elem, o) {
             's': "" + second,
             'u': "" + millisecond
         };
-        return typeof output != "undefined" ? o[output] : o;
+        return is_set(output) ? o[output] : o;
     };
 
     if (opt.toolbar) {
@@ -380,27 +492,68 @@ var MTE = function(elem, o) {
         release.style.height = 0;
     _AREA.parentNode.appendChild(release);
 
+    addEvent(overlay, "click", function() {
+        base.close(true);
+    });
+
+    // Custom Button
     base.button = function(key, data) {
+        if (key === '|') return base.separator(data);
         data = data || {};
+        data['tabindex'] = -1;
         if (data.title === false) return;
-        var a = doc.createElement('a');
-            a.className = opt.buttonClassPrefix + key;
-            a.href = '#' + key.replace(' ', ':').replace(/[^a-z0-9\:]/gi, '-').replace(/-+/g,'-').replace(/^-+|-+$/g, "");
-            a.setAttribute('tabindex', -1);
-            a.innerHTML = data.text ? data.text.replace(/%s/g, key) : '<i class="' + opt.iconClassPrefix + key + '"></i>';
-            a.onclick = function(e) {
-                if (typeof data.click == "function") {
-                    data.click(e, base);
-                    opt.click(e, base, this.hash.replace('#', ""));
-                    return false;
+        var btn = doc.createElement('a');
+            btn.className = opt.toolbarButtonClass.replace(/%s/g, key);
+            btn.href = '#' + key.replace(' ', ':').replace(/[^a-z0-9\:]/gi, '-').replace(/-+/g,'-').replace(/^-|-$/g, "");
+            btn.innerHTML = data.text ? data.text.replace(/%s/g, key) : '<i class="' + opt.toolbarIconClass.replace(/%s/g, key) + '"></i>';
+        if (data.title) btn.title = data.title;
+        if (is_object(data.attr)) {
+            for (var i in data.attr) {
+                var attr = i == 'class' ? 'className' : i;
+                if (data.attr[i].slice(0, 2) == '+=') {
+                    btn[attr] += data.attr[i].slice(2);
+                } else {
+                    btn[attr] = data.attr[i];
                 }
-            };
-        if (data.title) a.title = data.title;
+            }
+        }
+        addEvent(btn, "click", function(e) {
+            if (is_function(data.click)) {
+                button = btn;
+                data.click(e, base);
+                opt.click(e, base, this.hash.replace('#', ""));
+                return false;
+            }
+        });
         if (data.position) {
             var pos = data.position < 0 ? data.position + nav.children.length + 1 : data.position - 1;
-            nav.insertBefore(a, nav.children[pos]);
+            nav.insertBefore(btn, nav.children[pos]);
         } else {
-            nav.appendChild(a);
+            nav.appendChild(btn);
+        }
+        defaults.buttons[key] = data;
+    };
+
+    // Toolbar Button Separator
+    base.separator = function(data) {
+        data = data || {};
+        var sep = doc.createElement('span');
+            sep.className = opt.toolbarSeparatorClass;
+        if (is_object(data.attr)) {
+            for (var i in data.attr) {
+                var attr = i == 'class' ? 'className' : i;
+                if (data.attr[i].slice(0, 2) == '+=') {
+                    sep[attr] += data.attr[i].slice(2);
+                } else {
+                    sep[attr] = data.attr[i];
+                }
+            }
+        }
+        if (data.position) {
+            var pos = data.position < 0 ? data.position + nav.children.length + 1 : data.position - 1;
+            nav.insertBefore(sep, nav.children[pos]);
+        } else {
+            nav.appendChild(sep);
         }
     };
 
@@ -416,12 +569,12 @@ var MTE = function(elem, o) {
             _AREA.value = clean_B + s.value + clean_A;
             _SELECT(clean_B.length, clean_B.length + s.value.length, _UPDATE_HISTORY);
         }
-        if (typeof callback == "function") callback();
+        if (is_function(callback)) callback();
     };
 
     var _TOGGLE = editor.toggle, T = 0, btn = opt.buttons;
 
-    if (typeof btn == "object") {
+    if (is_object(btn)) {
 
         var toolbars = {
             'bold': {
@@ -603,15 +756,11 @@ var MTE = function(elem, o) {
             },
             'undo': {
                 title: btn.undo,
-                click: function() {
-                    editor.undo();
-                }
+                click: editor.undo
             },
             'repeat': {
                 title: btn.redo,
-                click: function() {
-                    editor.redo();
-                }
+                click: editor.redo
             }
         };
 
@@ -619,15 +768,33 @@ var MTE = function(elem, o) {
 
     }
 
-    _AREA.oncut = function() {
-        win.setTimeout(_UPDATE_HISTORY, 1);
-    };
+    addEvent(_AREA, "focus", base.close);
 
-    _AREA.onpaste = function() {
-        win.setTimeout(_UPDATE_HISTORY, 1);
-    };
+    addEvent(_AREA, "copy", function() {
+        var s = _SELECTION();
+        win.setTimeout(function() {
+            opt.copy(s);
+        }, 1);
+    });
 
-    _AREA.onkeydown = function(e) {
+    addEvent(_AREA, "cut", function() {
+        var s = _SELECTION();
+        win.setTimeout(function() {
+            s.end = s.start;
+            opt.cut(s), _UPDATE_HISTORY();
+        }, 1);
+    });
+
+    addEvent(_AREA, "paste", function() {
+        var s = _SELECTION();
+        win.setTimeout(function() {
+            s.end = _SELECTION().end;
+            s.value = _AREA.value.substring(s.start, s.end);
+            opt.paste(s), _UPDATE_HISTORY();
+        }, 1);
+    });
+
+    addEvent(_AREA, "keydown", function(e) {
 
         var s = _SELECTION(),
             sb = s.before,
@@ -835,6 +1002,7 @@ var MTE = function(elem, o) {
             '(R)': _u00AE,
             '+-': _u00B1,
             '-+': _u00B1,
+            'x': _u00D7,
             '/': _u00F7,
             '^': _u00B0,
             '<<': _u00AB,
@@ -889,7 +1057,7 @@ var MTE = function(elem, o) {
 
                 if (sb.match(/\((c|p|sm|tm|r)$/i) && sa[0] == ')') {
                     var s_ = sb.match(/\((sm|tm)$/i) ? 2 : 1;
-                    _AREA.value = sb.slice(0, -(s_ + 1)) + typography['(' + sb.slice(-s_).toLowerCase() + ')'] + sa.slice(s_);
+                    _AREA.value = sb.slice(0, -(s_ + 1)) + typography['(' + sb.slice(-s_).toLowerCase() + ')'] + sa.slice(1);
                     _SELECT(se - s_, _UPDATE_HISTORY);
                     return false;
                 }
@@ -992,7 +1160,7 @@ var MTE = function(elem, o) {
             win.setTimeout(_UPDATE_HISTORY, 1);
         }
 
-    };
+    });
 
     opt.ready(base);
 

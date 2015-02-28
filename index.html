@@ -13,6 +13,11 @@
   width:600px;
   height:200px;
 }
+.custom-color-drop .color {
+  display:block;
+  height:15px;
+  cursor:pointer;
+}
 </style>
   </head>
   <body>
@@ -44,10 +49,19 @@ List Item</textarea>
         },
         ready: function() {
             console.log('Ready!');
+        },
+        cut: function(selection) {
+            console.log(selection);
+        },
+        copy: function(selection) {
+            console.log(selection);
+        },
+        paste: function(selection) {
+            console.log(selection);
         }
     });
 
-    // Example Custom Buttons
+    // Custom Button and Modal Example
     myEditor.button('strikethrough another-class-goes-here another-another-class-goes-here', {
         title: 'Strike',
         position: 3,
@@ -91,9 +105,35 @@ List Item</textarea>
             });
         }
     });
+
+    // Custom Drop Example
+    myEditor.button('paint-brush', {
+        title: 'Example Drop',
+        click: function(e, base) {
+            base.drop('color', function(drop) {
+                var colors = ['#5FB0E6', '#86CDEA', '#86BAA3', '#706D45'], color;
+                drop.innerHTML = "";
+                for (var i in colors) {
+                    color = document.createElement('span');
+                    color.className = 'color';
+                    color.title = colors[i];
+                    color.style.backgroundColor = colors[i];
+                    color.onclick = function() {
+                        base.grip.toggle('<span style="color:' + this.title + ';">', '</span>');
+                        base.close(true);
+                    };
+                    drop.appendChild(color);
+                }
+            });
+        }
+    });
+
+    // Toolbar Separator Example
+    myEditor.separator({position: 4});
+
     </script>
 
-    <p><button onclick="myEditor.grip.toggle('&lt;test&gt;', '&lt;/test&gt;');">Test</button></p>
+    <p><button onclick="myEditor.grip.config.buttons.link.click();">Test</button></p>
 
   </body>
 </html>

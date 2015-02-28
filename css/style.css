@@ -11,7 +11,7 @@
   display:table;
   clear:both;
 }
-.editor-toolbar a {
+.editor-toolbar-button {
   display:block;
   float:left;
   background-color:#3c3c3c;
@@ -22,8 +22,32 @@
   text-align:center;
   margin:0 4px 4px 0;
 }
-.editor-toolbar a:active {background-color:#252525}
-textarea + .editor-toolbar a {margin:4px 4px 0 0}
+.editor-toolbar-button:active {background-color:#252525}
+textarea + .editor-toolbar-button {margin:4px 4px 0 0}
+
+/* Toolbar Separator */
+.editor-toolbar-separator {
+  display:block;
+  float:left;
+  width:0;
+  height:20px;
+  border-right:1px solid;
+  margin:0 4px 0 0;
+}
+
+/* Custom Drop */
+.custom-drop {
+  position:absolute;
+  top:-999999px;
+  left:-999999px;
+  width:100px;
+  background-color:white;
+  color:black;
+  text-shadow:none;
+  -webkit-box-shadow:0 1px 3px black;
+  -moz-box-shadow:0 1px 3px black;
+  box-shadow:0 1px 3px black;
+}
 
 /* Custom Modal */
 .custom-modal-overlay {
@@ -68,9 +92,10 @@ textarea + .editor-toolbar a {margin:4px 4px 0 0}
   width:100%;
 }
 .custom-modal-action {text-align:center}
-.custom-modal-prompt input {
+.custom-modal input,
+.custom-modal textarea {
   display:block;
-  margin:0;
+  margin:10px 0 0;
   padding:4px;
   width:100%;
   -webkit-box-sizing:border-box;
@@ -78,6 +103,13 @@ textarea + .editor-toolbar a {margin:4px 4px 0 0}
   box-sizing:border-box;
   text-shadow:none;
 }
+.custom-modal .input {
+  display:block;
+  margin:10px 0 0;
+}
+.custom-modal input:first-child,
+.custom-modal textarea:first-child,
+.custom-modal .input:first-child {margin-top:0}
 .custom-modal button {
   padding:2px 6px;
   cursor:pointer;
@@ -96,9 +128,9 @@ textarea + .editor-toolbar a {margin:4px 4px 0 0}
  */
 
 /*
-.editor-toolbar a {width:auto}
-.editor-toolbar a i {display:none}
-.editor-toolbar a:after {
+.editor-toolbar-button {width:auto}
+.editor-toolbar-button i {display:none}
+.editor-toolbar-buton:after {
   content:attr(title);
   font-weight:bold;
 }
