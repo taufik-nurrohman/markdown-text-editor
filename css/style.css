@@ -93,6 +93,7 @@ textarea + .editor-toolbar .editor-toolbar-button {margin:4px 4px 0 0}
 }
 .custom-modal-action {text-align:center}
 .custom-modal input,
+.custom-modal select,
 .custom-modal textarea {
   display:block;
   margin:10px 0 0;
@@ -108,8 +109,15 @@ textarea + .editor-toolbar .editor-toolbar-button {margin:4px 4px 0 0}
   margin:10px 0 0;
 }
 .custom-modal input:first-child,
+.custom-modal select:first-child,
 .custom-modal textarea:first-child,
 .custom-modal .input:first-child {margin-top:0}
+.custom-modal input[type="checkbox"],
+.custom-modal input[type="radio"] {
+  display:inline-block;
+  width:auto;
+  margin:0;
+}
 .custom-modal button {
   padding:2px 6px;
   cursor:pointer;
