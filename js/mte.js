@@ -123,11 +123,11 @@ var MTE = function(elem, o) {
         };
 
     var page = doc.body,
-        scroll = page.scrollTop || doc.documentElement.scrollTop,
         overlay = doc.createElement('div'),
         modal = doc.createElement('div'),
         drop = doc.createElement('div'),
         button = null,
+        scroll = 0,
         noop = function() {},
 
         // Rewrite some methods for better JS minification
@@ -247,6 +247,7 @@ var MTE = function(elem, o) {
         }
         type = type || 'default';
         offset = offset || {};
+        scroll = page.scrollTop || doc.documentElement.scrollTop;
         overlay.className = opt.modalOverlayClass.replace(/%s/g, type);
         modal.className = opt.modalClass.replace(/%s/g, type);
         modal.innerHTML = '<div class="' + opt.modalHeaderClass.replace(/%s/g, type) + '"></div><div class="' + opt.modalContentClass.replace(/%s/g, type) + '"></div><div class="' + opt.modalFooterClass.replace(/%s/g, type) + '"></div>';
@@ -291,6 +292,7 @@ var MTE = function(elem, o) {
         }
         type = type || 'default';
         offset = offset || {};
+        scroll = page.scrollTop || doc.documentElement.scrollTop;
         drop.className = opt.dropClass.replace(/%s/g, type);
         var d_s = drop.style;
         d_s.visibility = 'hidden';
@@ -500,10 +502,10 @@ var MTE = function(elem, o) {
     base.button = function(key, data) {
         if (key === '|') return base.separator(data);
         data = data || {};
-        data['tabindex'] = -1;
         if (data.title === false) return;
         var btn = doc.createElement('a');
             btn.className = opt.toolbarButtonClass.replace(/%s/g, key);
+            btn.setAttribute('tabindex', -1);
             btn.href = '#' + key.replace(' ', ':').replace(/[^a-z0-9\:]/gi, '-').replace(/-+/g,'-').replace(/^-|-$/g, "");
             btn.innerHTML = data.text ? data.text.replace(/%s/g, key) : '<i class="' + opt.toolbarIconClass.replace(/%s/g, key) + '"></i>';
         if (data.title) btn.title = data.title;
