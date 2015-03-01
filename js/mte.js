@@ -760,8 +760,8 @@ var MTE = function(elem, o) {
                                 });
                             });
                         } else {
-                            placeholder = OL + placeholder;
                             var OL = ' ' + opt.OL.replace(/%d/g, 1);
+                            placeholder = OL + placeholder;
                             _INSERT(placeholder, function() {
                                 _SELECT(s.start + OL.length, s.start + placeholder.length, _UPDATE_HISTORY);
                             });
