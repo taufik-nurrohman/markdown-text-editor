@@ -293,7 +293,7 @@ var MTE = function(elem, o) {
             });
             addEvent(page, "mousemove", function(e) {
                 x_e = e.pageX;
-                y_e = e.pageY;
+                y_e = e.pageY + scroll;
                 var m_left = fx_left ? 0 : w / 2,
                     m_top = fx_top ? 0 : h / 2,
                     left, top;
@@ -303,11 +303,11 @@ var MTE = function(elem, o) {
                     left = x_e - x_m + m_left;
                     top = y_e - y_m + m_top;
                     if (left < m_left) left = m_left;
-                    if (top < m_top) top = m_top;
+                    if (top < m_top + scroll) top = m_top + scroll;
                     if (left + m_left + WW > o_w) left = o_w - m_left - WW;
-                    if (top + m_top + HH > o_h) top = o_h - m_top - HH;
+                    if (top + m_top + HH > o_h + scroll) top = o_h - m_top - HH + scroll;
                     m_s.left = left + 'px';
-                    m_s.top = top + 'px';
+                    m_s.top = (top - scroll) + 'px';
                 }
             });
             addEvent(page, "mouseup", function() {
