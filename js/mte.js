@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.2.1
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.2.2
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -239,6 +239,12 @@ var MTE = function(elem, o) {
         return addEvent(elem, event, fn);
     };
 
+    var x_e = 0,
+        y_e = 0,
+        x_m = 0,
+        y_m = 0,
+        drag = null;
+
     // Base Modal
     base.modal = function(type, callback, offset) {
         if (is_function(type)) {
@@ -252,28 +258,61 @@ var MTE = function(elem, o) {
         overlay.className = opt.modalOverlayClass.replace(/%s/g, type);
         modal.className = opt.modalClass.replace(/%s/g, type);
         modal.innerHTML = '<div class="' + opt.modalHeaderClass.replace(/%s/g, type) + '"></div><div class="' + opt.modalContentClass.replace(/%s/g, type) + '"></div><div class="' + opt.modalFooterClass.replace(/%s/g, type) + '"></div>';
-        var m_s = modal.style;
+        var m_s = modal.style,
+            fx_left = 'left' in offset,
+            fx_top = 'top' in offset;
         m_s.visibility = 'hidden';
         page.appendChild(overlay);
         page.appendChild(modal);
         win.setTimeout(function() {
             var w = modal.offsetWidth,
-                h = modal.offsetHeight;
+                h = modal.offsetHeight,
+                o_w = overlay.offsetWidth,
+                o_h = overlay.offsetHeight;
             m_s.position = 'absolute';
-            m_s.top = 'top' in offset ? offset.top + 'px' : '50%';
-            m_s.left = 'left' in offset ? offset.left + 'px' : '50%';
+            m_s.left = fx_left ? offset.left + 'px' : '50%';
+            m_s.top = fx_top ? offset.top + 'px' : '50%';
             m_s.zIndex = '9999';
-            m_s.marginTop = ('top' in offset ? "" : scroll - (h / 2)) + 'px';
-            m_s.marginLeft = ('left' in offset ? "" : 0 - (w / 2)) + 'px';
+            m_s.marginLeft = (fx_left ? 0 : 0 - (w / 2)) + 'px';
+            m_s.marginTop = (fx_top ? 0 : scroll - (h / 2)) + 'px';
             m_s.visibility = "";
-            if (modal.offsetTop < 0 && !'top' in offset) {
-                m_s.top = 0;
-                m_s.marginTop = "";
-            }
-            if (modal.offsetLeft < 0 && !'left' in offset) {
+            if (modal.offsetLeft < 0 && !fx_left) {
                 m_s.left = 0;
-                m_s.marginLeft = "";
+                m_s.marginLeft = 0;
             }
+            if (modal.offsetTop < 0 && !fx_top) {
+                m_s.top = 0;
+                m_s.marginTop = 0;
+            }
+            var handle = modal.children[0];
+            addEvent(handle, "mousedown", function() {
+                drag = modal;
+                x_m = x_e - drag.offsetLeft;
+                y_m = y_e - drag.offsetTop;
+                return false;
+            });
+            addEvent(page, "mousemove", function(e) {
+                x_e = e.pageX;
+                y_e = e.pageY;
+                var m_left = fx_left ? 0 : w / 2,
+                    m_top = fx_top ? 0 : h / 2,
+                    left, top;
+                if (drag !== null) {
+                    var WW = fx_left ? w : 0,
+                        HH = fx_top ? h : 0;
+                    left = x_e - x_m + m_left;
+                    top = y_e - y_m + m_top;
+                    if (left < m_left) left = m_left;
+                    if (top < m_top) top = m_top;
+                    if (left + m_left + WW > o_w) left = o_w - m_left - WW;
+                    if (top + m_top + HH > o_h) top = o_h - m_top - HH;
+                    m_s.left = left + 'px';
+                    m_s.top = top + 'px';
+                }
+            });
+            addEvent(page, "mouseup", function() {
+                drag = null;
+            });
         }, 10);
         if (is_function(callback)) callback(overlay, modal);
     };
@@ -287,15 +326,16 @@ var MTE = function(elem, o) {
         }
         if (!offset && button) {
             offset = {
-                top: button.offsetTop + button.offsetHeight, // drop!
-                left: button.offsetLeft
+                left: button.offsetLeft,
+                top: button.offsetTop + button.offsetHeight // drop!
             };
         }
         type = type || 'default';
-        offset = offset || {};
         scroll = page.scrollTop || doc.documentElement.scrollTop;
         drop.className = opt.dropClass.replace(/%s/g, type);
-        var d_s = drop.style;
+        var d_s = drop.style,
+            fx_left = 'left' in offset,
+            fx_top = 'top' in offset;
         d_s.visibility = 'hidden';
         page.appendChild(drop);
         win.setTimeout(function() {
@@ -304,19 +344,19 @@ var MTE = function(elem, o) {
                 p_w = page.offsetWidth,
                 p_h = page.offsetHeight;
             d_s.position = 'absolute';
-            d_s.top = 'top' in offset ? offset.top + 'px' : '50%';
-            d_s.left = 'left' in offset ? offset.left + 'px' : '50%';
+            d_s.left = fx_left ? offset.left + 'px' : '50%';
+            d_s.top = fx_top ? offset.top + 'px' : '50%';
             d_s.zIndex = '9999';
-            d_s.marginTop = ('top' in offset ? "" : scroll - (h / 2)) + 'px';
-            d_s.marginLeft = ('left' in offset ? "" : 0 - (w / 2)) + 'px';
+            d_s.marginLeft = (fx_left ? 0 : 0 - (w / 2)) + 'px';
+            d_s.marginTop = (fx_top ? 0 : scroll - (h / 2)) + 'px';
             d_s.visibility = "";
-            if (offset.top + h > p_h) {
-                d_s.top = (p_h - h) + 'px';
-                d_s.marginTop = "";
-            }
             if (offset.left + w > p_w) {
                 d_s.left = (p_w - w) + 'px';
-                d_s.marginLeft = "";
+                d_s.marginLeft = 0;
+            }
+            if (offset.top + h > p_h) {
+                d_s.top = (p_h - h) + 'px';
+                d_s.marginTop = 0;
             }
         }, 10);
         if (is_function(callback)) callback(drop);
@@ -436,6 +476,7 @@ var MTE = function(elem, o) {
 
     // Close Drop and Modal
     base.close = function(select) {
+        drag = null;
         if (node_exist(overlay)) page.removeChild(overlay);
         if (node_exist(modal)) page.removeChild(modal);
         if (node_exist(drop)) page.removeChild(drop);
@@ -504,7 +545,7 @@ var MTE = function(elem, o) {
         if (key === '|') return base.separator(data);
         data = data || {};
         if (data.title === false) return;
-        var btn = doc.createElement('a');
+        var btn = doc.createElement('a'), pos;
             btn.className = opt.toolbarButtonClass.replace(/%s/g, key);
             btn.setAttribute('tabindex', -1);
             btn.href = '#' + key.replace(' ', ':').replace(/[^a-z0-9\:]/gi, '-').replace(/-+/g,'-').replace(/^-|-$/g, "");
@@ -512,25 +553,26 @@ var MTE = function(elem, o) {
         if (data.title) btn.title = data.title;
         if (is_object(data.attr)) {
             for (var i in data.attr) {
-                var attr = i == 'class' ? 'className' : i;
-                if (data.attr[i].slice(0, 2) == '+=') {
-                    btn[attr] += data.attr[i].slice(2);
+                if (is_string(data.attr[i]) && data.attr[i].slice(0, 2) == '+=') {
+                    var attr_o = btn.getAttribute(i) || "";
+                    btn.setAttribute(i, attr_o + data.attr[i].slice(2));
                 } else {
-                    btn[attr] = data.attr[i];
+                    btn.setAttribute(i, data.attr[i]);
                 }
             }
         }
         addEvent(btn, "click", function(e) {
             if (is_function(data.click)) {
+                base.close();
                 button = btn;
                 data.click(e, base);
                 opt.click(e, base, this.hash.replace('#', ""));
                 return false;
             }
         });
-        if (data.position) {
-            var pos = data.position < 0 ? data.position + nav.children.length + 1 : data.position - 1;
-            nav.insertBefore(btn, nav.children[pos]);
+        if (is_number(data.position)) {
+            pos = data.position < 0 ? data.position + nav.children.length + 1 : data.position - 1;
+            nav.insertBefore(btn, nav.children[pos] || null);
         } else {
             nav.appendChild(btn);
         }
@@ -540,21 +582,21 @@ var MTE = function(elem, o) {
     // Toolbar Button Separator
     base.separator = function(data) {
         data = data || {};
-        var sep = doc.createElement('span');
+        var sep = doc.createElement('span'), pos;
             sep.className = opt.toolbarSeparatorClass;
         if (is_object(data.attr)) {
             for (var i in data.attr) {
-                var attr = i == 'class' ? 'className' : i;
-                if (data.attr[i].slice(0, 2) == '+=') {
-                    sep[attr] += data.attr[i].slice(2);
+                if (is_string(data.attr[i]) && data.attr[i].slice(0, 2) == '+=') {
+                    var attr_o = sep.getAttribute(i) || "";
+                    sep.setAttribute(i, attr_o + data.attr[i].slice(2));
                 } else {
-                    sep[attr] = data.attr[i];
+                    sep.setAttribute(i, data.attr[i]);
                 }
             }
         }
-        if (data.position) {
-            var pos = data.position < 0 ? data.position + nav.children.length + 1 : data.position - 1;
-            nav.insertBefore(sep, nav.children[pos]);
+        if (is_number(data.position)) {
+            pos = data.position < 0 ? data.position + nav.children.length + 1 : data.position - 1;
+            nav.insertBefore(sep, nav.children[pos] || null);
         } else {
             nav.appendChild(sep);
         }
@@ -621,17 +663,16 @@ var MTE = function(elem, o) {
                         clean_V = trim(s.value),
                         clean_A = _trim(s.after),
                         s_B = clean_B.length > 0 ? '\n\n' : "",
-                        v = clean_V, end;
-                    if (clean_V.length === 0) clean_V = opt.placeholders.text;
-                    if (v == opt.placeholders.text) {
+                        placeholder = opt.placeholders.text, end;
+                    if (clean_V == placeholder) {
                         _SELECT(s.start, s.end);
                     } else {
-                        if (v.length > 0) {
-                            editor[v[0] == '>' ? 'outdent' : 'indent']('> ');
+                        if (clean_V.length > 0) {
+                            editor[clean_V[0] == '>' ? 'outdent' : 'indent']('> ');
                         } else {
-                            _AREA.value = clean_B + s_B + '> ' + clean_V + '\n\n' + clean_A;
+                            _AREA.value = clean_B + s_B + '> ' + placeholder + '\n\n' + clean_A;
                             end = clean_B.length + s_B.length + 2;
-                            _SELECT(end, end + clean_V.length, _UPDATE_HISTORY);
+                            _SELECT(end, end + placeholder.length, _UPDATE_HISTORY);
                         }
                     }
                 }
@@ -706,8 +747,9 @@ var MTE = function(elem, o) {
                 title: btn.ol,
                 click: function() {
                     var s = _SELECTION(),
+                        placeholder = opt.placeholders.list_ol_text,
                         ol = 0;
-                    if (s.value == opt.placeholders.list_ol_text) {
+                    if (s.value == placeholder) {
                         _SELECT(s.start, s.end);
                     } else {
                         if (s.value.length > 0) {
@@ -718,8 +760,8 @@ var MTE = function(elem, o) {
                                 });
                             });
                         } else {
-                            var OL = ' ' + opt.OL.replace(/%d/g, 1),
-                                placeholder = OL + opt.placeholders.list_ol_text;
+                            placeholder = OL + placeholder;
+                            var OL = ' ' + opt.OL.replace(/%d/g, 1);
                             _INSERT(placeholder, function() {
                                 _SELECT(s.start + OL.length, s.start + placeholder.length, _UPDATE_HISTORY);
                             });
@@ -730,15 +772,16 @@ var MTE = function(elem, o) {
             'list-ul': {
                 title: btn.ul,
                 click: function() {
-                    var s = _SELECTION();
-                    if (s.value == opt.placeholders.list_ul_text) {
+                    var s = _SELECTION(),
+                        placeholder = opt.placeholders.list_ul_text;
+                    if (s.value == placeholder) {
                         _SELECT(s.start, s.end);
                     } else {
                         var UL = ' ' + opt.UL;
                         if (s.value.length > 0) {
                             _INDENT(UL);
                         } else {
-                            var placeholder = UL + opt.placeholders.list_ul_text;
+                            placeholder = UL + placeholder;
                             _INSERT(placeholder, function() {
                                 _SELECT(s.start + UL.length, s.start + placeholder.length, _UPDATE_HISTORY);
                             });
@@ -816,7 +859,7 @@ var MTE = function(elem, o) {
         }, 1);
 
         // Disable the end bracket key if character before
-        // cursor is matched with character after cursor
+        // cursor is match with character after cursor
         var b = sb, a = sa[0], esc = b.slice(-1) == '\\';
         if (
             b.indexOf('(') !== -1 && shift && k == 48 && a == ')' && !esc ||
@@ -866,7 +909,7 @@ var MTE = function(elem, o) {
             return insert('<' + sv + '>', s);
         }
 
-        // `Shift + Tab` to outdent
+        // `Shift + Tab` to "outdent"
         if (shift && tab) {
             _OUTDENT('( *' + re_OL + '| *' + re_UL + '|> *|' + re_TAB + ')', 1, true);
             return false;
@@ -881,18 +924,18 @@ var MTE = function(elem, o) {
                 _SELECT(ss + 1, _UPDATE_HISTORY);
                 return false;
             }
-            // `Tab` to indent
+            // `Tab` to "indent"
             _INDENT(opt.tabSize);
             return false;
         }
 
-        // `Ctrl + Z` to undo
+        // `Ctrl + Z` to "undo"
         if (ctrl && k == 90) {
             editor.undo();
             return false;
         }
 
-        // `Ctrl + Y` or `Ctrl + R` to redo
+        // `Ctrl + Y` or `Ctrl + R` to "redo"
         if (ctrl && k == 89 || ctrl && k == 82) {
             editor.redo();
             return false;
@@ -918,19 +961,19 @@ var MTE = function(elem, o) {
                 return false;
             }
 
-            // `Ctrl + H` for heading
+            // `Ctrl + H` for "heading"
             if (ctrl && k == 72) {
                 toolbars.header.click();
                 return false;
             }
 
-            // `Ctrl + L` for link
+            // `Ctrl + L` for "link"
             if (ctrl && k == 76) {
                 toolbars.link.click();
                 return false;
             }
 
-            // `Ctrl + G` for image
+            // `Ctrl + G` for "image"
             if (ctrl && k == 71) {
                 toolbars.image.click();
                 return false;
@@ -938,7 +981,7 @@ var MTE = function(elem, o) {
 
         }
 
-        // Add a space at the beginning of the list item when user start
+        // Add a space at the beginning of the list item when user starts
         // pressing the space bar after typing `1.` or `*` or `-` or `+`
         if (k == 32) {
             var match = '(^|\\n)(' + trim_(re_OL) + '|' + trim_(re_UL) + ')';
@@ -1021,7 +1064,7 @@ var MTE = function(elem, o) {
 
             if (alt) {
 
-                // Convert some combination of characters
+                // Convert some combination of printable characters
                 // into their corresponding Unicode characters
                 _REPLACE(/'([^']*?)'/g, _u2018 + '$1' + _u2019, noop);
                 _REPLACE(/"([^"]*?)"/g, _u201C + '$1' + _u201D, noop);
@@ -1037,21 +1080,18 @@ var MTE = function(elem, o) {
 
             if (alt) {
 
-                // `Alt` for curly double quote
                 if (sb.indexOf('"') !== -1 && sa[0] == '"') {
                     _AREA.value = sb.replace(/"([^"]*?)$/, _u201C + '$1') + _u201D + sa.slice(1);
                     _SELECT(se, _UPDATE_HISTORY);
                     return false;
                 }
 
-                // `Alt` for curly single quote
                 if (sb.indexOf("'") !== -1 && sa[0] == "'") {
                     _AREA.value = sb.replace(/'([^']*?)$/, _u2018 + '$1') + _u2019 + sa.slice(1);
                     _SELECT(se, _UPDATE_HISTORY);
                     return false;
                 }
 
-                // --ibid
                 if (sb.slice(-2).match(/\w'$/i)) {
                     _AREA.value = sb.slice(0, -1) + _u2019 + sa;
                     _SELECT(se, _UPDATE_HISTORY);
@@ -1080,7 +1120,7 @@ var MTE = function(elem, o) {
                     return false;
                 }
 
-                // Convert some combination of characters
+                // Convert some combination of printable characters
                 // into their corresponding Unicode characters
                 for (var i in typography) {
                     if (sb.slice(-i.length) == i) {

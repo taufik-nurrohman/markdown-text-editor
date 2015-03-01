@@ -7,18 +7,27 @@
     <link href="css/demo.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
     <style>
-.custom-modal-my-modal {width:auto}
-.custom-modal-my-modal img {
-  display:block;
-  width:600px;
-  height:200px;
-}
-.custom-color-drop .color {
-  display:block;
-  height:15px;
-  cursor:pointer;
-}
-</style>
+    .editor-toolbar {
+      margin-right:1px;
+      margin-left:1px;
+    }
+    .editor-toolbar-button {
+      background-color:#3c3c3c;
+      color:#87ceeb;
+    }
+    .editor-toolbar-button:active {background-color:#252525}
+    .custom-modal-my-modal {width:auto}
+    .custom-modal-my-modal img {
+      display:block;
+      width:600px;
+      height:200px;
+    }
+    .custom-color-drop .color {
+      display:block;
+      height:15px;
+      cursor:pointer;
+    }
+    </style>
   </head>
   <body>
 
@@ -61,7 +70,7 @@ List Item</textarea>
         }
     });
 
-    // Custom Button and Modal Example
+    // Custom Button and Modal
     myEditor.button('strikethrough another-class-goes-here another-another-class-goes-here', {
         title: 'Strike',
         position: 3,
@@ -72,13 +81,13 @@ List Item</textarea>
     myEditor.button('warning', {
         title: 'Example Alert Box',
         click: function(e, base) {
-            base.alert('Alert Box', 'This is an alert box!');
+            base.alert('Alert Box', 'This is an alert box.');
         }
     });
     myEditor.button('question-circle', {
         title: 'Example Confirm Box',
         click: function(e, base) {
-            base.confirm('Confirm Box', 'This is a confirm box!', {
+            base.confirm('Confirm Box', 'This is a confirm box.', {
                 OK: function() {
                     alert('Confirmed!');
                 },
@@ -106,7 +115,7 @@ List Item</textarea>
         }
     });
 
-    // Custom Drop Example
+    // Custom Drop
     myEditor.button('paint-brush', {
         title: 'Example Drop',
         click: function(e, base) {
@@ -128,7 +137,7 @@ List Item</textarea>
         }
     });
 
-    // Toolbar Separator Example
+    // Toolbar Separator
     myEditor.separator({position: 4});
 
     </script>
