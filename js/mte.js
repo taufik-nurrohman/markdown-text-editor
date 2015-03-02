@@ -115,6 +115,7 @@ var MTE = function(elem, o) {
                 list_ol_text: 'List Item',
                 image_alt: 'Image'
             },
+            update: function() {},
             keydown: function() {},
             click: function() {},
             ready: function() {},
@@ -572,10 +573,12 @@ var MTE = function(elem, o) {
         }
         addEvent(btn, "click", function(e) {
             if (is_function(data.click)) {
+                var hash = this.hash.replace('#', "");
                 base.close();
                 button = btn;
                 data.click(e, base);
-                opt.click(e, base, this.hash.replace('#', ""));
+                opt.click(e, base, hash);
+                opt.update(e, base, hash);
                 return false;
             }
         });
@@ -717,7 +720,7 @@ var MTE = function(elem, o) {
             },
             'link': {
                 title: btn.link,
-                click: function() {
+                click: function(e) {
                     var s = _SELECTION(),
                         title, url, placeholder = opt.placeholders.link_text;
                     base.prompt(opt.prompts.link_url_title, opt.prompts.link_url, true, function(r) {
@@ -727,13 +730,14 @@ var MTE = function(elem, o) {
                             _WRAP('[', '](' + url + (title !== "" ? ' \"' + title + '\"' : "") + ')', (s.value.length === 0 ? function() {
                                 _REPLACE(/^/, placeholder);
                             } : 1));
+                            opt.update(e, base);
                         });
                     });
                 }
             },
             'image': {
                 title: btn.image,
-                click: function() {
+                click: function(e) {
                     base.prompt(opt.prompts.image_url_title, opt.prompts.image_url, true, function(r) {
                         var s = _SELECTION(),
                             clean_B = trim_(s.before),
@@ -748,7 +752,9 @@ var MTE = function(elem, o) {
                             });
                         alt = alt.indexOf('/') === -1 && r.indexOf('.') !== -1 ? alt : opt.placeholders.image_alt;
                         _AREA.value = clean_B + s_B + '![' + alt + '](' + r + ')\n\n' + clean_A;
-                        _SELECT(clean_B.length + s_B.length + 2 + alt.length + 2 + r.length + 3, _UPDATE_HISTORY);
+                        _SELECT(clean_B.length + s_B.length + 2 + alt.length + 2 + r.length + 3, function() {
+                            opt.update(e, base), _UPDATE_HISTORY();
+                        });
                     });
                 }
             },
@@ -825,27 +831,27 @@ var MTE = function(elem, o) {
 
     addEvent(_AREA, "focus", base.close);
 
-    addEvent(_AREA, "copy", function() {
+    addEvent(_AREA, "copy", function(e) {
         var s = _SELECTION();
         win.setTimeout(function() {
-            opt.copy(s);
+            opt.copy(s), opt.update(e, base);
         }, 1);
     });
 
-    addEvent(_AREA, "cut", function() {
+    addEvent(_AREA, "cut", function(e) {
         var s = _SELECTION();
         win.setTimeout(function() {
             s.end = s.start;
-            opt.cut(s), _UPDATE_HISTORY();
+            opt.cut(s), opt.update(e, base), _UPDATE_HISTORY();
         }, 1);
     });
 
-    addEvent(_AREA, "paste", function() {
+    addEvent(_AREA, "paste", function(e) {
         var s = _SELECTION();
         win.setTimeout(function() {
             s.end = _SELECTION().end;
             s.value = _AREA.value.substring(s.start, s.end);
-            opt.paste(s), _UPDATE_HISTORY();
+            opt.paste(s), opt.update(e, base), _UPDATE_HISTORY();
         }, 1);
     });
 
@@ -864,7 +870,7 @@ var MTE = function(elem, o) {
             tab = k == 9;
 
         win.setTimeout(function() {
-            opt.keydown(e, base);
+            opt.keydown(e, base), opt.update(e, base);
         }, 1);
 
         // Disable the end bracket key if character before
