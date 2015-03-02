@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.2.2
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.2.3
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -127,8 +127,15 @@ var MTE = function(elem, o) {
         overlay = doc.createElement('div'),
         modal = doc.createElement('div'),
         drop = doc.createElement('div'),
-        button = null,
         scroll = 0,
+        button = null,
+        drag = null,
+        x_e = 0,
+        y_e = 0,
+        x_m = 0,
+        y_m = 0,
+        v_w = page.parentNode.offsetWidth,
+        v_h = page.parentNode.offsetHeight,
         noop = function() {},
 
         // Rewrite some methods for better JS minification
@@ -164,6 +171,9 @@ var MTE = function(elem, o) {
 
     function addEvent(elem, event, fn) {
         event = 'on' + event;
+        if (fn === null) {
+            return elem[event] = null;
+        }
         if(is_function(elem[event])) {
             fn = (function(fn_1, fn_2) {
                 return function() {
@@ -239,12 +249,6 @@ var MTE = function(elem, o) {
         return addEvent(elem, event, fn);
     };
 
-    var x_e = 0,
-        y_e = 0,
-        x_m = 0,
-        y_m = 0,
-        drag = null;
-
     // Base Modal
     base.modal = function(type, callback, offset) {
         if (is_function(type)) {
@@ -254,7 +258,7 @@ var MTE = function(elem, o) {
         }
         type = type || 'default';
         offset = offset || {};
-        scroll = page.scrollTop || doc.documentElement.scrollTop;
+        scroll = page.scrollTop || page.parentNode.scrollTop;
         overlay.className = opt.modalOverlayClass.replace(/%s/g, type);
         modal.className = opt.modalClass.replace(/%s/g, type);
         modal.innerHTML = '<div class="' + opt.modalHeaderClass.replace(/%s/g, type) + '"></div><div class="' + opt.modalContentClass.replace(/%s/g, type) + '"></div><div class="' + opt.modalFooterClass.replace(/%s/g, type) + '"></div>';
@@ -266,9 +270,7 @@ var MTE = function(elem, o) {
         page.appendChild(modal);
         win.setTimeout(function() {
             var w = modal.offsetWidth,
-                h = modal.offsetHeight,
-                o_w = overlay.offsetWidth,
-                o_h = overlay.offsetHeight;
+                h = modal.offsetHeight;
             m_s.position = 'absolute';
             m_s.left = fx_left ? offset.left + 'px' : '50%';
             m_s.top = fx_top ? offset.top + 'px' : '50%';
@@ -291,6 +293,7 @@ var MTE = function(elem, o) {
                 y_m = y_e - drag.offsetTop;
                 return false;
             });
+            addEvent(page, "mousemove", null);
             addEvent(page, "mousemove", function(e) {
                 x_e = e.pageX;
                 y_e = e.pageY + scroll;
@@ -303,15 +306,12 @@ var MTE = function(elem, o) {
                     left = x_e - x_m + m_left;
                     top = y_e - y_m + m_top;
                     if (left < m_left) left = m_left;
-                    if (top < m_top + scroll) top = m_top + scroll;
-                    if (left + m_left + WW > o_w) left = o_w - m_left - WW;
-                    if (top + m_top + HH > o_h + scroll) top = o_h - m_top - HH + scroll;
+                    if (top < m_top) top = m_top;
+                    if (left + m_left + WW > v_w) left = v_w - m_left - WW;
+                    if (top + m_top + HH > v_h) top = v_h - m_top - HH;
                     m_s.left = left + 'px';
                     m_s.top = (top - scroll) + 'px';
                 }
-            });
-            addEvent(page, "mouseup", function() {
-                drag = null;
             });
         }, 10);
         if (is_function(callback)) callback(overlay, modal);
@@ -331,7 +331,8 @@ var MTE = function(elem, o) {
             };
         }
         type = type || 'default';
-        scroll = page.scrollTop || doc.documentElement.scrollTop;
+        offset = offset || {};
+        scroll = page.scrollTop || page.parentNode.scrollTop;
         drop.className = opt.dropClass.replace(/%s/g, type);
         var d_s = drop.style,
             fx_left = 'left' in offset,
@@ -340,9 +341,7 @@ var MTE = function(elem, o) {
         page.appendChild(drop);
         win.setTimeout(function() {
             var w = drop.offsetWidth,
-                h = drop.offsetHeight,
-                p_w = page.offsetWidth,
-                p_h = page.offsetHeight;
+                h = drop.offsetHeight;
             d_s.position = 'absolute';
             d_s.left = fx_left ? offset.left + 'px' : '50%';
             d_s.top = fx_top ? offset.top + 'px' : '50%';
@@ -350,12 +349,12 @@ var MTE = function(elem, o) {
             d_s.marginLeft = (fx_left ? 0 : 0 - (w / 2)) + 'px';
             d_s.marginTop = (fx_top ? 0 : scroll - (h / 2)) + 'px';
             d_s.visibility = "";
-            if (offset.left + w > p_w) {
-                d_s.left = (p_w - w) + 'px';
+            if (offset.left + w > v_w) {
+                d_s.left = (v_w - w) + 'px';
                 d_s.marginLeft = 0;
             }
-            if (offset.top + h > p_h) {
-                d_s.top = (p_h - h) + 'px';
+            if (offset.top + h > v_h) {
+                d_s.top = (v_h - h) + 'px';
                 d_s.marginTop = 0;
             }
         }, 10);
@@ -476,6 +475,7 @@ var MTE = function(elem, o) {
 
     // Close Drop and Modal
     base.close = function(select) {
+        button = null;
         drag = null;
         if (node_exist(overlay)) page.removeChild(overlay);
         if (node_exist(modal)) page.removeChild(modal);
@@ -486,6 +486,19 @@ var MTE = function(elem, o) {
             _SELECT(('start' in select ? select.start : s.start), ('end' in select ? select.end : s.end));
         }
     };
+
+    addEvent(win, "resize", function() {
+        v_w = page.parentNode.offsetWidth;
+        v_h = page.parentNode.offsetHeight;
+    });
+
+    addEvent(page, "mouseup", function() {
+        drag = null;
+    });
+
+    addEvent(overlay, "click", function() {
+        base.close(true);
+    });
 
     // Scroll the `<textarea>`
     base.scroll = function(pos, callback) {
@@ -535,10 +548,6 @@ var MTE = function(elem, o) {
         release.style.width = 0;
         release.style.height = 0;
     _AREA.parentNode.appendChild(release);
-
-    addEvent(overlay, "click", function() {
-        base.close(true);
-    });
 
     // Custom Button
     base.button = function(key, data) {
