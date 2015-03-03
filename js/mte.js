@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.2.3
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.2.4
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -377,12 +377,16 @@ var MTE = function(elem, o) {
                 input.type = 'text';
                 input.value = value;
             addEvent(input, "keydown", function(e) {
+                var k = e.keyCode;
+                if (k == 27) {
+                    return base.close(true), false;
+                }
                 if (required) {
-                    if (e.keyCode == 13 && this.value !== "" && this.value !== value) {
+                    if (k == 13 && this.value !== "" && this.value !== value) {
                         return success(this.value), false;
                     }
                 } else {
-                    if (e.keyCode == 13) {
+                    if (k == 13) {
                         return success(this.value == value ? "" : this.value), false;
                     }
                 }
@@ -401,6 +405,16 @@ var MTE = function(elem, o) {
                 CANCEL.innerHTML = opt.buttons.cancel;
             addEvent(CANCEL, "click", function() {
                 return base.close(true), false;
+            });
+            addEvent(OK, "keydown", function(e) {
+                var k = e.keyCode;
+                if (k == 27) return base.close(true), false;
+                if (k == 39) return CANCEL.focus(), false;
+            });
+            addEvent(CANCEL, "keydown", function(e) {
+                var k = e.keyCode;
+                if (k == 27) return base.close(true), false;
+                if (k == 37) return OK.focus(), false;
             });
             m.children[0].innerHTML = title ? title : "";
             m.children[1].appendChild(input);
@@ -427,9 +441,15 @@ var MTE = function(elem, o) {
                 }
                 return false;
             });
+            addEvent(OK, "keydown", function(e) {
+                if (e.keyCode == 27) return base.close(true), false;
+            });
             m.children[0].innerHTML = title ? title : "";
             m.children[1].innerHTML = message ? message : "";
             m.children[2].appendChild(OK);
+            win.setTimeout(function() {
+                OK.focus();
+            }, 10);
         }, offset);
     };
 
@@ -466,11 +486,24 @@ var MTE = function(elem, o) {
                 }
                 return false;
             });
+            addEvent(OK, "keydown", function(e) {
+                var k = e.keyCode;
+                if (k == 27) return base.close(true), false;
+                if (k == 39) return CANCEL.focus(), false;
+            });
+            addEvent(CANCEL, "keydown", function(e) {
+                var k = e.keyCode;
+                if (k == 27) return base.close(true), false;
+                if (k == 37) return OK.focus(), false;
+            });
             m.children[0].innerHTML = title ? title : "";
             m.children[1].innerHTML = message ? message : "";
             m.children[2].appendChild(OK);
             m.children[2].appendChild(doc.createTextNode(' '));
             m.children[2].appendChild(CANCEL);
+            win.setTimeout(function() {
+                CANCEL.focus();
+            }, 10);
         }, offset);
     };
 
@@ -581,6 +614,9 @@ var MTE = function(elem, o) {
                 opt.update(e, base, hash);
                 return false;
             }
+        });
+        addEvent(btn, "keydown", function(e) {
+            if (e.keyCode == 27) return base.close(true), false;
         });
         if (is_number(data.position)) {
             pos = data.position < 0 ? data.position + nav.children.length + 1 : data.position - 1;
