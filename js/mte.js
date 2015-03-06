@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.2.4
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.2.5
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -51,6 +51,7 @@ var MTE = function(elem, o) {
         _u2191 = '\u2191', // upwards arrow
         _u2193 = '\u2193', // downwards arrow
         _u21B5 = '\u21B5', // carriage return arrow
+        _u00B7 = '\u00B7', // middle dot
 
         base = this,
         win = window,
@@ -72,6 +73,7 @@ var MTE = function(elem, o) {
             modalContentClass: 'custom-modal-content custom-modal-%s-content',
             modalFooterClass: 'custom-modal-action custom-modal-%s-action',
             modalOverlayClass: 'custom-modal-overlay custom-modal-%s-overlay',
+            closeATXHeaders: false, // `true` for `#### Heading ####`
             STRONG: '**',
             EM: '_',
             UL: '- ',
@@ -111,8 +113,8 @@ var MTE = function(elem, o) {
                 text: 'text goes here' + _u2026,
                 heading_text: 'Heading',
                 link_text: 'link text',
-                list_ul_text: 'List Item',
-                list_ol_text: 'List Item',
+                list_ul_text: 'List item',
+                list_ol_text: 'List item',
                 image_alt: 'Image'
             },
             update: function() {},
@@ -136,7 +138,7 @@ var MTE = function(elem, o) {
         x_m = 0,
         y_m = 0,
         v_w = page.parentNode.offsetWidth,
-        v_h = page.parentNode.offsetHeight,
+        v_h = win.innerHeight > page.parentNode.offsetHeight ? win.innerHeight : page.parentNode.offsetHeight,
         noop = function() {},
 
         // Rewrite some methods for better JS minification
@@ -378,9 +380,8 @@ var MTE = function(elem, o) {
                 input.value = value;
             addEvent(input, "keydown", function(e) {
                 var k = e.keyCode;
-                if (k == 27) {
-                    return base.close(true), false;
-                }
+                if (k == 27) return base.close(true), false;
+                if (k == 40) return OK.focus(), false;
                 if (required) {
                     if (k == 13 && this.value !== "" && this.value !== value) {
                         return success(this.value), false;
@@ -409,12 +410,14 @@ var MTE = function(elem, o) {
             addEvent(OK, "keydown", function(e) {
                 var k = e.keyCode;
                 if (k == 27) return base.close(true), false;
+                if (k == 38) return input.focus(), false;
                 if (k == 39) return CANCEL.focus(), false;
             });
             addEvent(CANCEL, "keydown", function(e) {
                 var k = e.keyCode;
                 if (k == 27) return base.close(true), false;
                 if (k == 37) return OK.focus(), false;
+                if (k == 38) return input.focus(), false;
             });
             m.children[0].innerHTML = title ? title : "";
             m.children[1].appendChild(input);
@@ -523,7 +526,7 @@ var MTE = function(elem, o) {
 
     addEvent(win, "resize", function() {
         v_w = page.parentNode.offsetWidth;
-        v_h = page.parentNode.offsetHeight;
+        v_h = win.innerHeight > page.parentNode.offsetHeight ? win.innerHeight : page.parentNode.offsetHeight;
     });
 
     addEvent(page, "mouseup", function() {
@@ -667,203 +670,200 @@ var MTE = function(elem, o) {
 
     var _TOGGLE = editor.toggle, T = 0, btn = opt.buttons;
 
-    if (is_object(btn)) {
-
-        var toolbars = {
-            'bold': {
-                title: btn.bold,
-                click: function() {
-                    var strong = opt.STRONG;
-                    _TOGGLE(strong, strong, 1, true);
-                }
-            },
-            'italic': {
-                title: btn.italic,
-                click: function() {
-                    var em = opt.EM;
-                    _TOGGLE(em, em, 1, true);
-                }
-            },
-            'code': {
-                title: btn.code,
-                click: function() {
-                    var v = _SELECTION().value,
-                        code = opt.CODE,
-                        pre = opt.PRE;
-                    if (v.indexOf('\n') !== -1 && v.length > 0) {
-                        if (pre.indexOf('%s') === -1) {
-                            var match = '(' + re_PRE + '|\\t| {4})';
-                            editor[v.match(new RegExp('^' + match)) ? 'outdent' : 'indent'](pre);
-                        } else {
-                            var wrap = pre.split('%s');
-                            _TOGGLE(wrap[0], wrap[1] || wrap[0]);
-                        }
+    var toolbars = {
+        'bold': {
+            title: btn.bold,
+            click: function() {
+                var strong = opt.STRONG;
+                _TOGGLE(strong, strong, 1, true);
+            }
+        },
+        'italic': {
+            title: btn.italic,
+            click: function() {
+                var em = opt.EM;
+                _TOGGLE(em, em, 1, true);
+            }
+        },
+        'code': {
+            title: btn.code,
+            click: function() {
+                var v = _SELECTION().value,
+                    code = opt.CODE,
+                    pre = opt.PRE;
+                if (v.indexOf('\n') !== -1 && v.length > 0) {
+                    if (pre.indexOf('%s') === -1) {
+                        var match = '(' + re_PRE + '|\\t| {4})';
+                        editor[v.match(new RegExp('^' + match)) ? 'outdent' : 'indent'](pre);
                     } else {
-                        _TOGGLE(code, code, 1, true);
+                        var wrap = pre.split('%s');
+                        _TOGGLE(wrap[0], wrap[1] || wrap[0]);
                     }
+                } else {
+                    _TOGGLE(code, code, 1, true);
                 }
-            },
-            'quote-right': {
-                title: btn.quote,
-                click: function() {
-                    var s = _SELECTION(),
-                        clean_B = trim_(s.before),
-                        clean_V = trim(s.value),
-                        clean_A = _trim(s.after),
-                        s_B = clean_B.length > 0 ? '\n\n' : "",
-                        placeholder = opt.placeholders.text, end;
-                    if (clean_V == placeholder) {
-                        _SELECT(s.start, s.end);
+            }
+        },
+        'quote-right': {
+            title: btn.quote,
+            click: function() {
+                var s = _SELECTION(),
+                    clean_B = trim_(s.before),
+                    clean_V = trim(s.value),
+                    clean_A = _trim(s.after),
+                    s_B = clean_B.length > 0 ? '\n\n' : "",
+                    placeholder = opt.placeholders.text, end;
+                if (clean_V == placeholder) {
+                    _SELECT(s.start, s.end);
+                } else {
+                    if (clean_V.length > 0) {
+                        editor[clean_V[0] == '>' ? 'outdent' : 'indent']('> ');
                     } else {
-                        if (clean_V.length > 0) {
-                            editor[clean_V[0] == '>' ? 'outdent' : 'indent']('> ');
-                        } else {
-                            _AREA.value = clean_B + s_B + '> ' + placeholder + '\n\n' + clean_A;
-                            end = clean_B.length + s_B.length + 2;
-                            _SELECT(end, end + placeholder.length, _UPDATE_HISTORY);
-                        }
-                    }
-                }
-            },
-            'header': {
-                title: btn.heading,
-                click: function() {
-                    var s = _SELECTION(),
-                        h = ["", '=', '-', '### ', '#### ', '##### ', '###### '],
-                        clean_B = trim_(s.before.replace(/#+ $/, "")),
-                        clean_V = trim(s.value.replace(/#+ |\n+[-=]+/, "").replace(/\n+/g, ' ')),
-                        clean_A = _trim(s.after.replace(/^\n+[-=]+/, "")),
-                        s_B = clean_B.length > 0 ? '\n\n' : "", end;
-                    T = T < h.length - 1 ? T + 1 : 0;
-                    if (s.value.length > 0) {
-                        if (T > 0 && T < 3) {
-                            _AREA.value = clean_B + s_B + clean_V + '\n' + clean_V.replace(/./g, h[T]) + '\n\n' + clean_A;
-                            end = clean_B.length + s_B.length;
-                            _SELECT(end, end + clean_V.length, _UPDATE_HISTORY);
-                        } else {
-                            _AREA.value = clean_B + s_B + h[T] + clean_V + '\n\n' + clean_A;
-                            end = clean_B.length + s_B.length + h[T].length;
-                            _SELECT(end, end + clean_V.length, _UPDATE_HISTORY);
-                        }
-                    } else {
-                        var placeholder = opt.placeholders.heading_text;
-                        T = 1;
-                        _AREA.value = clean_B + s_B + placeholder + '\n' + placeholder.replace(/./g, h[T]) + '\n\n' + clean_A;
-                        end = clean_B.length + s_B.length;
+                        _AREA.value = clean_B + s_B + '> ' + placeholder + '\n\n' + clean_A;
+                        end = clean_B.length + s_B.length + 2;
                         _SELECT(end, end + placeholder.length, _UPDATE_HISTORY);
                     }
                 }
-            },
-            'link': {
-                title: btn.link,
-                click: function(e) {
-                    var s = _SELECTION(),
-                        title, url, placeholder = opt.placeholders.link_text;
-                    base.prompt(opt.prompts.link_url_title, opt.prompts.link_url, true, function(r) {
-                        url = r;
-                        base.prompt(opt.prompts.link_title_title, opt.prompts.link_title, false, function(r) {
-                            title = r;
-                            _WRAP('[', '](' + url + (title !== "" ? ' \"' + title + '\"' : "") + ')', (s.value.length === 0 ? function() {
-                                _REPLACE(/^/, placeholder);
-                            } : 1));
-                            opt.update(e, base);
-                        });
-                    });
-                }
-            },
-            'image': {
-                title: btn.image,
-                click: function(e) {
-                    base.prompt(opt.prompts.image_url_title, opt.prompts.image_url, true, function(r) {
-                        var s = _SELECTION(),
-                            clean_B = trim_(s.before),
-                            clean_A = _trim(s.after),
-                            s_B = clean_B.length > 0 ? '\n\n' : "",
-                            alt = decodeURIComponent(
-                                r.substring(
-                                    r.lastIndexOf('/') + 1, r.lastIndexOf('.')
-                                ).replace(/[-+._]+/g, ' ')
-                            ).toLowerCase().replace(/(?:^|\s)\S/g, function(a) {
-                                return a.toUpperCase();
-                            });
-                        alt = alt.indexOf('/') === -1 && r.indexOf('.') !== -1 ? alt : opt.placeholders.image_alt;
-                        _AREA.value = clean_B + s_B + '![' + alt + '](' + r + ')\n\n' + clean_A;
-                        _SELECT(clean_B.length + s_B.length + 2 + alt.length + 2 + r.length + 3, function() {
-                            opt.update(e, base), _UPDATE_HISTORY();
-                        });
-                    });
-                }
-            },
-            'list-ol': {
-                title: btn.ol,
-                click: function() {
-                    var s = _SELECTION(),
-                        placeholder = opt.placeholders.list_ol_text,
-                        ol = 0;
-                    if (s.value == placeholder) {
-                        _SELECT(s.start, s.end);
+            }
+        },
+        'header': {
+            title: btn.heading,
+            click: function() {
+                var s = _SELECTION(),
+                    h = ["", '=', '-', '###', '####', '#####', '######'],
+                    clean_B = trim_(s.before.replace(/#+ $/, "")),
+                    clean_V = trim(s.value.replace(/#+ | #+|\n+[-=]+/g, "").replace(/\n+/g, ' ')),
+                    clean_A = _trim(s.after.replace(/^( #+|\n+[-=]+)/g, "")),
+                    s_B = clean_B.length > 0 ? '\n\n' : "", end;
+                T = T < h.length - 1 ? T + 1 : 0;
+                if (s.value.length > 0) {
+                    if (T > 0 && T < 3) {
+                        _AREA.value = clean_B + s_B + clean_V + '\n' + clean_V.replace(/./g, h[T]) + '\n\n' + clean_A;
+                        end = clean_B.length + s_B.length;
+                        _SELECT(end, end + clean_V.length, _UPDATE_HISTORY);
                     } else {
-                        if (s.value.length > 0) {
-                            _INDENT("", function() {
-                                _REPLACE(/^[^\n]/gm, function(str) {
-                                    ol++;
-                                    return str.replace(/^/, ' ' + opt.OL.replace(/%d/g, ol));
-                                });
-                            });
-                        } else {
-                            var OL = ' ' + opt.OL.replace(/%d/g, 1);
-                            placeholder = OL + placeholder;
-                            _INSERT(placeholder, function() {
-                                _SELECT(s.start + OL.length, s.start + placeholder.length, _UPDATE_HISTORY);
-                            });
-                        }
+                        var space = T > 0 ? ' ' : "";
+                        _AREA.value = clean_B + s_B + h[T] + space + clean_V + (opt.closeATXHeaders ? space + h[T] : "") + '\n\n' + clean_A;
+                        end = clean_B.length + s_B.length + h[T].length + space.length;
+                        _SELECT(end, end + clean_V.length, _UPDATE_HISTORY);
                     }
+                } else {
+                    var placeholder = opt.placeholders.heading_text;
+                    T = 1;
+                    _AREA.value = clean_B + s_B + placeholder + '\n' + placeholder.replace(/./g, h[T]) + '\n\n' + clean_A;
+                    end = clean_B.length + s_B.length;
+                    _SELECT(end, end + placeholder.length, _UPDATE_HISTORY);
                 }
-            },
-            'list-ul': {
-                title: btn.ul,
-                click: function() {
-                    var s = _SELECTION(),
-                        placeholder = opt.placeholders.list_ul_text;
-                    if (s.value == placeholder) {
-                        _SELECT(s.start, s.end);
-                    } else {
-                        var UL = ' ' + opt.UL;
-                        if (s.value.length > 0) {
-                            _INDENT(UL);
-                        } else {
-                            placeholder = UL + placeholder;
-                            _INSERT(placeholder, function() {
-                                _SELECT(s.start + UL.length, s.start + placeholder.length, _UPDATE_HISTORY);
-                            });
-                        }
-                    }
-                }
-            },
-            'ellipsis-h': {
-                title: btn.rule,
-                click: function() {
+            }
+        },
+        'link': {
+            title: btn.link,
+            click: function(e) {
+                var s = _SELECTION(),
+                    title, url, placeholder = opt.placeholders.link_text;
+                base.prompt(opt.prompts.link_url_title, opt.prompts.link_url, true, function(r) {
+                    url = r;
+                    base.prompt(opt.prompts.link_title_title, opt.prompts.link_title, false, function(r) {
+                        title = r;
+                        _WRAP('[', '](' + url + (title !== "" ? ' \"' + title + '\"' : "") + ')', (s.value.length === 0 ? function() {
+                            _REPLACE(/^/, placeholder);
+                        } : 1));
+                        opt.update(e, base);
+                    });
+                });
+            }
+        },
+        'image': {
+            title: btn.image,
+            click: function(e) {
+                base.prompt(opt.prompts.image_url_title, opt.prompts.image_url, true, function(r) {
                     var s = _SELECTION(),
                         clean_B = trim_(s.before),
                         clean_A = _trim(s.after),
-                        s_B = clean_B.length > 0 ? '\n\n' : "";
-                    _AREA.value = clean_B + s_B + opt.HR + '\n\n' + clean_A;
-                    _SELECT(clean_B.length + s_B.length + opt.HR.length + 2, _UPDATE_HISTORY);
-                }
-            },
-            'undo': {
-                title: btn.undo,
-                click: editor.undo
-            },
-            'repeat': {
-                title: btn.redo,
-                click: editor.redo
+                        s_B = clean_B.length > 0 ? '\n\n' : "",
+                        alt = decodeURIComponent(
+                            r.substring(
+                                r.lastIndexOf('/') + 1, r.lastIndexOf('.')
+                            ).replace(/[-+._]+/g, ' ')
+                        ).toLowerCase().replace(/(?:^|\s)\S/g, function(a) {
+                            return a.toUpperCase();
+                        });
+                    alt = alt.indexOf('/') === -1 && r.indexOf('.') !== -1 ? alt : opt.placeholders.image_alt;
+                    _AREA.value = clean_B + s_B + '![' + alt + '](' + r + ')\n\n' + clean_A;
+                    _SELECT(clean_B.length + s_B.length + 2 + alt.length + 2 + r.length + 3, function() {
+                        opt.update(e, base), _UPDATE_HISTORY();
+                    });
+                });
             }
-        };
+        },
+        'list-ol': {
+            title: btn.ol,
+            click: function() {
+                var s = _SELECTION(),
+                    placeholder = opt.placeholders.list_ol_text,
+                    ol = 0;
+                if (s.value == placeholder) {
+                    _SELECT(s.start, s.end);
+                } else {
+                    if (s.value.length > 0) {
+                        _INDENT("", function() {
+                            _REPLACE(/^[^\n]/gm, function(str) {
+                                ol++;
+                                return str.replace(/^/, ' ' + opt.OL.replace(/%d/g, ol));
+                            });
+                        });
+                    } else {
+                        var OL = ' ' + opt.OL.replace(/%d/g, 1);
+                        placeholder = OL + placeholder;
+                        _INSERT(placeholder, function() {
+                            _SELECT(s.start + OL.length, s.start + placeholder.length, _UPDATE_HISTORY);
+                        });
+                    }
+                }
+            }
+        },
+        'list-ul': {
+            title: btn.ul,
+            click: function() {
+                var s = _SELECTION(),
+                    placeholder = opt.placeholders.list_ul_text;
+                if (s.value == placeholder) {
+                    _SELECT(s.start, s.end);
+                } else {
+                    var UL = ' ' + opt.UL;
+                    if (s.value.length > 0) {
+                        _INDENT(UL);
+                    } else {
+                        placeholder = UL + placeholder;
+                        _INSERT(placeholder, function() {
+                            _SELECT(s.start + UL.length, s.start + placeholder.length, _UPDATE_HISTORY);
+                        });
+                    }
+                }
+            }
+        },
+        'ellipsis-h': {
+            title: btn.rule,
+            click: function() {
+                var s = _SELECTION(),
+                    clean_B = trim_(s.before),
+                    clean_A = _trim(s.after),
+                    s_B = clean_B.length > 0 ? '\n\n' : "";
+                _AREA.value = clean_B + s_B + opt.HR + '\n\n' + clean_A;
+                _SELECT(clean_B.length + s_B.length + opt.HR.length + 2, _UPDATE_HISTORY);
+            }
+        },
+        'undo': {
+            title: btn.undo,
+            click: editor.undo
+        },
+        'repeat': {
+            title: btn.redo,
+            click: editor.redo
+        }
+    };
 
-        for (var i in toolbars) base.button(i, toolbars[i]);
-
-    }
+    for (var i in toolbars) base.button(i, toolbars[i]);
 
     addEvent(_AREA, "focus", base.close);
 
@@ -986,8 +986,8 @@ var MTE = function(elem, o) {
             return false;
         }
 
-        // `Ctrl + Y` or `Ctrl + R` to "redo"
-        if (ctrl && k == 89 || ctrl && k == 82) {
+        // `Ctrl + Y` to "redo"
+        if (ctrl && k == 89) {
             editor.redo();
             return false;
         }
@@ -1000,15 +1000,9 @@ var MTE = function(elem, o) {
                 return false;
             }
 
-            // `Ctrl + I` for "italic"
-            if (ctrl && k == 73) {
-                toolbars.italic.click();
-                return false;
-            }
-
-            // `Ctrl + Q` for "blockquote"
-            if (ctrl && k == 81) {
-                toolbars['quote-right'].click();
+            // `Ctrl + G` for "image"
+            if (ctrl && k == 71) {
+                toolbars.image.click();
                 return false;
             }
 
@@ -1018,15 +1012,45 @@ var MTE = function(elem, o) {
                 return false;
             }
 
+            // `Ctrl + I` for "italic"
+            if (ctrl && k == 73) {
+                toolbars.italic.click();
+                return false;
+            }
+
+            // `Ctrl + K` for "code"
+            if (ctrl && !shift && k == 75) {
+                toolbars.code.click();
+                return false;
+            }
+
             // `Ctrl + L` for "link"
             if (ctrl && k == 76) {
                 toolbars.link.click();
                 return false;
             }
 
-            // `Ctrl + G` for "image"
-            if (ctrl && k == 71) {
-                toolbars.image.click();
+            // `Ctrl + Q` for "blockquote"
+            if (ctrl && k == 81) {
+                toolbars['quote-right'].click();
+                return false;
+            }
+
+            // `Ctrl + R` for "horizontal rule"
+            if (ctrl && k == 82) {
+                toolbars['ellipsis-h'].click();
+                return false;
+            }
+
+            // `Ctrl + 1` for "ordered list"
+            if (ctrl && k == 49) {
+                toolbars['list-ol'].click();
+                return false;
+            }
+
+            // `Ctrl + -` for "unordered list"
+            if (ctrl && k == 173) {
+                toolbars['list-ul'].click();
                 return false;
             }
 
@@ -1108,7 +1132,8 @@ var MTE = function(elem, o) {
             '>': _u203A,
             '<=': _u2264,
             '>=': _u2265,
-            '!=': _u2260
+            '!=': _u2260,
+            '.': _u00B7
         };
 
         if (sv.length > 0) {
