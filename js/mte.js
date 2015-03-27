@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.2.5
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.2.6
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -806,18 +806,40 @@ var MTE = function(elem, o) {
                     _SELECT(s.start, s.end);
                 } else {
                     if (s.value.length > 0) {
-                        _INDENT("", function() {
-                            _REPLACE(/^[^\n]/gm, function(str) {
-                                ol++;
-                                return str.replace(/^/, ' ' + opt.OL.replace(/%d/g, ol));
+                        if (!s.value.match(new RegExp('^ *' + re_OL))) {
+                            _INDENT("", function() {
+                                _REPLACE(new RegExp('(^|\\n) *' + re_UL + ' *', 'g'), '$1', noop);
+                                _REPLACE(/^[^\n]/gm, function(str) {
+                                    ol++;
+                                    return str.replace(/^/, ' ' + opt.OL.replace(/%d/g, ol));
+                                });
                             });
-                        });
+                        } else {
+                            _OUTDENT(' *' + re_OL, 1, true);
+                        }
                     } else {
-                        var OL = ' ' + opt.OL.replace(/%d/g, 1);
-                        placeholder = OL + placeholder;
-                        _INSERT(placeholder, function() {
-                            _SELECT(s.start + OL.length, s.start + placeholder.length, _UPDATE_HISTORY);
-                        });
+                        if (!s.before.match(/(^|\n{2,})$/)) {
+                            var match = new RegExp('(^|\\n) *' + re_OL + '(.*?)$'),
+                                clean_B = s.before.replace(match, '$1$2');
+                            if (!s.before.match(match)) {
+                                var e = new RegExp('(?:^|\\n) *(' + re_OL + ').*?\n.*?$').exec(s.before),
+                                    OL = ' ' + opt.OL.replace(/%d/g, e && e[1] ? parseInt(e[1], 10) + 1 : 1);
+                                s.before = s.before.replace(new RegExp('(^|\\n) *' + re_UL + '(.*?)$'), '$1$2').replace(/(^|\n)(.*?)$/, '$1' + OL + '$2');
+                                _AREA.value = s.before + s.after;
+                                _SELECT(s.before.length, _UPDATE_HISTORY);
+                            } else {
+                                _AREA.value = clean_B + s.after;
+                                _SELECT(clean_B.length, _UPDATE_HISTORY);
+                            }
+                        } else {
+                            var s_B = s.before.length > 0 ? '\n\n' : "",
+                                OL = ' ' + opt.OL.replace(/%d/g, 1),
+                                clean_B = trim_(s.before),
+                                end = clean_B.length + s_B.length + OL.length;
+                            placeholder = OL + placeholder;
+                            _AREA.value = clean_B + s_B + placeholder;
+                            _SELECT(end, end + placeholder.length, _UPDATE_HISTORY);
+                        }
                     }
                 }
             }
@@ -832,12 +854,29 @@ var MTE = function(elem, o) {
                 } else {
                     var UL = ' ' + opt.UL;
                     if (s.value.length > 0) {
-                        _INDENT(UL);
+                        _REPLACE(new RegExp('(^|\\n) *' + re_OL + ' *', 'g'), '$1', noop);
+                        editor[s.value.match(new RegExp('^ *' + re_UL)) ? 'outdent' : 'indent'](UL);
                     } else {
-                        placeholder = UL + placeholder;
-                        _INSERT(placeholder, function() {
-                            _SELECT(s.start + UL.length, s.start + placeholder.length, _UPDATE_HISTORY);
-                        });
+                        if (!s.before.match(/(^|\n{2,})$/)) {
+                            var UL = ' ' + opt.UL;
+                            var match = new RegExp('(^|\\n) *' + re_UL + '(.*?)$'),
+                                clean_B = s.before.replace(match, '$1$2');
+                            if (!s.before.match(match)) {
+                                s.before = s.before.replace(new RegExp('(^|\\n) *' + re_OL + '(.*?)$'), '$1$2').replace(/(^|\n)(.*?)$/, '$1' + UL + '$2');
+                                _AREA.value = s.before + s.after;
+                                _SELECT(s.before.length, _UPDATE_HISTORY);
+                            } else {
+                                _AREA.value = clean_B + s.after;
+                                _SELECT(clean_B.length, _UPDATE_HISTORY);
+                            }
+                        } else {
+                            var s_B = s.before.length > 0 ? '\n\n' : "",
+                                clean_B = trim_(s.before),
+                                end = clean_B.length + s_B.length + UL.length;
+                            placeholder = UL + placeholder;
+                            _AREA.value = clean_B + s_B + placeholder;
+                            _SELECT(end, end + placeholder.length, _UPDATE_HISTORY);
+                        }
                     }
                 }
             }
