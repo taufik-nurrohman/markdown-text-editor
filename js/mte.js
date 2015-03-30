@@ -802,10 +802,10 @@ var MTE = function(elem, o) {
                 var s = _SELECTION(),
                     placeholder = opt.placeholders.list_ol_text,
                     ol = 0;
-                if (s.value == placeholder) {
-                    _SELECT(s.start, s.end);
-                } else {
-                    if (s.value.length > 0) {
+                if (s.value.length > 0) {
+                    if (s.value == placeholder) {
+                        _SELECT(s.start, s.end);
+                    } else {
                         if (!s.value.match(new RegExp('^ *' + re_OL))) {
                             _INDENT("", function() {
                                 _REPLACE(new RegExp('(^|\\n) *' + re_UL + ' *', 'g'), '$1', noop);
@@ -817,29 +817,29 @@ var MTE = function(elem, o) {
                         } else {
                             _OUTDENT(' *' + re_OL, 1, true);
                         }
-                    } else {
-                        if (!s.before.match(/(^|\n{2,})$/)) {
-                            var match = new RegExp('(^|\\n) *' + re_OL + '(.*?)$'),
-                                clean_B = s.before.replace(match, '$1$2');
-                            if (!s.before.match(match)) {
-                                var e = new RegExp('(?:^|\\n) *(' + re_OL + ').*?\n.*?$').exec(s.before),
-                                    OL = ' ' + opt.OL.replace(/%d/g, e && e[1] ? parseInt(e[1], 10) + 1 : 1);
-                                s.before = s.before.replace(new RegExp('(^|\\n) *' + re_UL + '(.*?)$'), '$1$2').replace(/(^|\n)(.*?)$/, '$1' + OL + '$2');
-                                _AREA.value = s.before + s.after;
-                                _SELECT(s.before.length, _UPDATE_HISTORY);
-                            } else {
-                                _AREA.value = clean_B + s.after;
-                                _SELECT(clean_B.length, _UPDATE_HISTORY);
-                            }
+                    }
+                } else {
+                    if (!s.before.match(/(^|\n{2,})$/)) {
+                        var match = new RegExp('(^|\\n) *' + re_OL + '(.*?)$'),
+                            clean_B = s.before.replace(match, '$1$2');
+                        if (!s.before.match(match)) {
+                            var e = new RegExp('(?:^|\\n) *(' + re_OL + ').*?\n.*?$').exec(s.before),
+                                OL = ' ' + opt.OL.replace(/%d/g, e && e[1] ? parseInt(e[1], 10) + 1 : 1);
+                            s.before = s.before.replace(new RegExp('(^|\\n) *' + re_UL + '(.*?)$'), '$1$2').replace(/(^|\n)(.*?)$/, '$1' + OL + '$2');
+                            _AREA.value = s.before + s.after;
+                            _SELECT(s.before.length, _UPDATE_HISTORY);
                         } else {
-                            var s_B = s.before.length > 0 ? '\n\n' : "",
-                                OL = ' ' + opt.OL.replace(/%d/g, 1),
-                                clean_B = trim_(s.before),
-                                end = clean_B.length + s_B.length + OL.length;
-                            placeholder = OL + placeholder;
-                            _AREA.value = clean_B + s_B + placeholder;
-                            _SELECT(end, end + placeholder.length, _UPDATE_HISTORY);
+                            _AREA.value = clean_B + s.after;
+                            _SELECT(clean_B.length, _UPDATE_HISTORY);
                         }
+                    } else {
+                        var s_B = s.before.length > 0 ? '\n\n' : "",
+                            OL = ' ' + opt.OL.replace(/%d/g, 1),
+                            clean_B = trim_(s.before),
+                            end = clean_B.length + s_B.length + OL.length;
+                        placeholder = OL + placeholder;
+                        _AREA.value = clean_B + s_B + placeholder;
+                        _SELECT(end, end + placeholder.length, _UPDATE_HISTORY);
                     }
                 }
             }
@@ -848,35 +848,34 @@ var MTE = function(elem, o) {
             title: btn.ul,
             click: function() {
                 var s = _SELECTION(),
-                    placeholder = opt.placeholders.list_ul_text;
-                if (s.value == placeholder) {
-                    _SELECT(s.start, s.end);
-                } else {
-                    var UL = ' ' + opt.UL;
-                    if (s.value.length > 0) {
+                    placeholder = opt.placeholders.list_ul_text,
+                    UL = ' ' + opt.UL;
+                if (s.value.length > 0) {
+                    if (s.value == placeholder) {
+                        _SELECT(s.start, s.end);
+                    } else {
                         _REPLACE(new RegExp('(^|\\n) *' + re_OL + ' *', 'g'), '$1', noop);
                         editor[s.value.match(new RegExp('^ *' + re_UL)) ? 'outdent' : 'indent'](UL);
-                    } else {
-                        if (!s.before.match(/(^|\n{2,})$/)) {
-                            var UL = ' ' + opt.UL;
-                            var match = new RegExp('(^|\\n) *' + re_UL + '(.*?)$'),
-                                clean_B = s.before.replace(match, '$1$2');
-                            if (!s.before.match(match)) {
-                                s.before = s.before.replace(new RegExp('(^|\\n) *' + re_OL + '(.*?)$'), '$1$2').replace(/(^|\n)(.*?)$/, '$1' + UL + '$2');
-                                _AREA.value = s.before + s.after;
-                                _SELECT(s.before.length, _UPDATE_HISTORY);
-                            } else {
-                                _AREA.value = clean_B + s.after;
-                                _SELECT(clean_B.length, _UPDATE_HISTORY);
-                            }
+                    }
+                } else {
+                    if (!s.before.match(/(^|\n{2,})$/)) {
+                        var match = new RegExp('(^|\\n) *' + re_UL + '(.*?)$'),
+                            clean_B = s.before.replace(match, '$1$2');
+                        if (!s.before.match(match)) {
+                            s.before = s.before.replace(new RegExp('(^|\\n) *' + re_OL + '(.*?)$'), '$1$2').replace(/(^|\n) *(.*?)$/, '$1' + UL + '$2');
+                            _AREA.value = s.before + s.after;
+                            _SELECT(s.before.length, _UPDATE_HISTORY);
                         } else {
-                            var s_B = s.before.length > 0 ? '\n\n' : "",
-                                clean_B = trim_(s.before),
-                                end = clean_B.length + s_B.length + UL.length;
-                            placeholder = UL + placeholder;
-                            _AREA.value = clean_B + s_B + placeholder;
-                            _SELECT(end, end + placeholder.length, _UPDATE_HISTORY);
+                            _AREA.value = clean_B + s.after;
+                            _SELECT(clean_B.length, _UPDATE_HISTORY);
                         }
+                    } else {
+                        var s_B = s.before.length > 0 ? '\n\n' : "",
+                            clean_B = trim_(s.before),
+                            end = clean_B.length + s_B.length + UL.length;
+                        placeholder = UL + placeholder;
+                        _AREA.value = clean_B + s_B + placeholder;
+                        _SELECT(end, end + placeholder.length, _UPDATE_HISTORY);
                     }
                 }
             }
