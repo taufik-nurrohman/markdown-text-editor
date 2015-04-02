@@ -284,10 +284,14 @@ var MTE = function(elem, o) {
             if (modal.offsetLeft < 0 && !fx_left) {
                 m_s.left = 0;
                 m_s.marginLeft = 0;
+                fx_left = true;
+                offset.left = 0;
             }
             if (modal.offsetTop < 0 && !fx_top) {
                 m_s.top = 0;
                 m_s.marginTop = 0;
+                fx_top = true;
+                offset.top = 0;
             }
             var handle = modal.children[0];
             addEvent(handle, "mousedown", function() {
@@ -764,7 +768,7 @@ var MTE = function(elem, o) {
                 base.prompt(opt.prompts.link_url_title, opt.prompts.link_url, true, function(r) {
                     url = r;
                     base.prompt(opt.prompts.link_title_title, opt.prompts.link_title, false, function(r) {
-                        title = r;
+                        title = r.replace(/'/g, '&apos;').replace(/"/g, '&quot;');
                         _WRAP('[', '](' + url + (title !== "" ? ' \"' + title + '\"' : "") + ')', (s.value.length === 0 ? function() {
                             _REPLACE(/^/, placeholder);
                         } : 1));
@@ -836,10 +840,10 @@ var MTE = function(elem, o) {
                         var s_B = s.before.length > 0 ? '\n\n' : "",
                             OL = ' ' + opt.OL.replace(/%d/g, 1),
                             clean_B = trim_(s.before),
-                            end = clean_B.length + s_B.length + OL.length;
+                            end = clean_B.length + s_B.length;
                         placeholder = OL + placeholder;
-                        _AREA.value = clean_B + s_B + placeholder;
-                        _SELECT(end, end + placeholder.length, _UPDATE_HISTORY);
+                        _AREA.value = clean_B + s_B + placeholder + s.after;
+                        _SELECT(end + OL.length, end + placeholder.length, _UPDATE_HISTORY);
                     }
                 }
             }
@@ -872,10 +876,10 @@ var MTE = function(elem, o) {
                     } else {
                         var s_B = s.before.length > 0 ? '\n\n' : "",
                             clean_B = trim_(s.before),
-                            end = clean_B.length + s_B.length + UL.length;
+                            end = clean_B.length + s_B.length;
                         placeholder = UL + placeholder;
-                        _AREA.value = clean_B + s_B + placeholder;
-                        _SELECT(end, end + placeholder.length, _UPDATE_HISTORY);
+                        _AREA.value = clean_B + s_B + placeholder + s.after;
+                        _SELECT(end + UL.length, end + placeholder.length, _UPDATE_HISTORY);
                     }
                 }
             }
