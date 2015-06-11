@@ -128,7 +128,7 @@ List Item</textarea>
                     color.title = colors[i];
                     color.style.backgroundColor = colors[i];
                     color.onclick = function() {
-                        base.grip.toggle('<span style="color:' + this.title + ';">', '</span>');
+                        base.grip.wrap('<span style="color:' + this.title + ';">', '</span>');
                         base.close(true);
                     };
                     drop.appendChild(color);

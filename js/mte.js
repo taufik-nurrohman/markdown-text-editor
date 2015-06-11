@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.2.6
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.3.0
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -15,12 +15,6 @@
  */
 
 var MTE = function(elem, o) {
-
-    // Backward Compatibility
-    if ('prompt' in o) o.prompts = o.prompt;
-    if ('placeholder' in o) o.placeholders = o.placeholder;
-    if ('iconClassPrefix' in o) o.toolbarIconClass = o.iconClassPrefix + '%s';
-    if ('buttonClassPrefix' in o) o.toolbarButtonClass = o.buttonClassPrefix + '%s';
 
     var _u2018 = '\u2018', // left single quotation mark
         _u2019 = '\u2019', // right single quotation mark
@@ -1324,7 +1318,7 @@ var MTE = function(elem, o) {
     });
 
     // Add a class to the `<textarea>` element
-    var test = new RegExp('(^| )' + opt.areaClass + '( |$)'),
+    var test = new RegExp('(^|\\s)' + opt.areaClass + '(\\s|$)'),
         c = _AREA.className;
     if (!c.match(test)) {
         _AREA.className = trim(c + ' ' + opt.areaClass);
