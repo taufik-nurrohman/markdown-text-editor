@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.3.0
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.4.0
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -240,6 +240,12 @@ var MTE = function(elem, o) {
         re_OL = escape(opt.OL).replace(/%d/g, '[0-9]+'),
         re_TAB = escape(opt.tabSize),
         re_PRE = escape(opt.PRE);
+
+    // Base Keyboard Shortcut
+    base.shortcuts = [];
+    base.shortcut = function(code, callback) {
+        base.shortcuts[code] = callback;
+    };
 
     // Base Event Listener
     base.event = function(event, elem, fn) {
@@ -944,6 +950,20 @@ var MTE = function(elem, o) {
         win.setTimeout(function() {
             opt.keydown(e, base), opt.update(e, base);
         }, 1);
+
+        for (var i in base.shortcuts) {
+            var shc = i.toLowerCase().split('+'), valid = false;
+            for (var j in shc) {
+                valid = (
+                    shc[j] == 'ctrl' && ctrl ||
+                    shc[j] == 'shift' && shift ||
+                    shc[j] == 'alt' && alt ||
+                    shc[j] == 'tab' && tab ||
+                    parseInt(shc[j], 10) == k
+                );
+            }
+            if (valid) return base.shortcuts[i](e, base);
+        }
 
         // Disable the end bracket key if character before
         // cursor is match with character after cursor
