@@ -61,7 +61,7 @@ var MTE = function(elem, o) {
             toolbarButtonClass: 'editor-toolbar-button editor-toolbar-button-%s',
             toolbarSeparatorClass: 'editor-toolbar-separator',
             toolbarPosition: "before", // before or after `<textarea>` ?
-            dropClass: 'custom-drop custom-%s-drop',
+            dropClass: 'custom-drop custom-drop-%s',
             modalClass: 'custom-modal custom-modal-%s',
             modalHeaderClass: 'custom-modal-header custom-modal-%s-header',
             modalContentClass: 'custom-modal-content custom-modal-%s-content',
