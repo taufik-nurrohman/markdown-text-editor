@@ -67,7 +67,7 @@ var MTE = function(elem, o) {
             modalContentClass: 'custom-modal-content custom-modal-%s-content',
             modalFooterClass: 'custom-modal-action custom-modal-%s-action',
             modalOverlayClass: 'custom-modal-overlay custom-modal-%s-overlay',
-            closeATXHeaders: false, // `true` for `#### Heading ####`
+            closeATXHeader: false, // `true` for `#### Heading ####`
             STRONG: '**',
             EM: '_',
             UL: '- ',
@@ -754,7 +754,7 @@ var MTE = function(elem, o) {
                         _SELECT(end, end + clean_V.length, _UPDATE_HISTORY);
                     } else {
                         var space = T > 0 ? ' ' : "";
-                        _AREA.value = clean_B + s_B + h[T] + space + clean_V + (opt.closeATXHeaders ? space + h[T] : "") + '\n\n' + clean_A;
+                        _AREA.value = clean_B + s_B + h[T] + space + clean_V + (opt.closeATXHeader ? space + h[T] : "") + '\n\n' + clean_A;
                         end = clean_B.length + s_B.length + h[T].length + space.length;
                         _SELECT(end, end + clean_V.length, _UPDATE_HISTORY);
                     }
