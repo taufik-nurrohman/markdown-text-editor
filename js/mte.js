@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.4.0
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.4.1
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -51,6 +51,7 @@ var MTE = function(elem, o) {
         win = window,
         doc = document,
         editor = new Editor(elem),
+        noop = function() {},
         defaults = {
             tabSize: '    ',
             toolbar: true,
@@ -75,6 +76,7 @@ var MTE = function(elem, o) {
             HR: '---',
             CODE: '`',
             PRE: '    ', // Use ~~~\n%s\n~~~ or ```\n%s\n``` to enable fenced code block syntax in "Markdown Extra"
+            BLOCKQUOTE: '> ',
             buttons: {
                 ok: 'OK',
                 yes: 'Yes',
@@ -111,13 +113,13 @@ var MTE = function(elem, o) {
                 list_ol_text: 'List item',
                 image_alt: 'Image'
             },
-            update: function() {},
-            keydown: function() {},
-            click: function() {},
-            ready: function() {},
-            copy: function() {},
-            cut: function() {},
-            paste: function() {}
+            update: noop,
+            keydown: noop,
+            click: noop,
+            ready: noop,
+            copy: noop,
+            cut: noop,
+            paste: noop
         };
 
     var page = doc.body,
@@ -133,7 +135,6 @@ var MTE = function(elem, o) {
         y_m = 0,
         v_w = page.parentNode.offsetWidth,
         v_h = win.innerHeight > page.parentNode.offsetHeight ? win.innerHeight : page.parentNode.offsetHeight,
-        noop = function() {},
 
         // Rewrite some methods for better JS minification
         _AREA = elem,
@@ -244,9 +245,9 @@ var MTE = function(elem, o) {
 
     // Escapes for `RegExp()`
     var re_UL = escape(opt.UL).replace(/\\[-+*]/g, '[-+*]'),
-        re_OL = escape(opt.OL).replace(/%d/g, '[0-9]+'),
+        re_OL = escape(opt.OL).replace(/%d/g, '\\d+'),
         re_TAB = escape(opt.tabSize),
-        re_PRE = escape(opt.PRE);
+        re_BLOCKQUOTE = escape(opt.BLOCKQUOTE);
 
     // Base Shortcut
     base.shortcuts = [];
@@ -422,13 +423,13 @@ var MTE = function(elem, o) {
                 var k = e.keyCode;
                 if (k == 27) return base.close(true), false;
                 if (k == 38) return input.focus(), false;
-                if (k == 39) return CANCEL.focus(), false;
+                if (k == 39 || k == 40) return CANCEL.focus(), false;
             });
             addEvent(CANCEL, "keydown", function(e) {
                 var k = e.keyCode;
                 if (k == 27) return base.close(true), false;
-                if (k == 37) return OK.focus(), false;
-                if (k == 38) return input.focus(), false;
+                if (k == 37 || k == 38) return OK.focus(), false;
+                if (k == 40) return false;
             });
             m.children[0].innerHTML = title ? title : "";
             m.children[1].appendChild(input);
@@ -503,12 +504,13 @@ var MTE = function(elem, o) {
             addEvent(OK, "keydown", function(e) {
                 var k = e.keyCode;
                 if (k == 27) return base.close(true), false;
-                if (k == 39) return CANCEL.focus(), false;
+                if (k == 39 || k == 40) return CANCEL.focus(), false;
             });
             addEvent(CANCEL, "keydown", function(e) {
                 var k = e.keyCode;
                 if (k == 27) return base.close(true), false;
-                if (k == 37) return OK.focus(), false;
+                if (k == 37 || k == 38) return OK.focus(), false;
+                if (k == 40) return false;
             });
             m.children[0].innerHTML = title ? title : "";
             m.children[1].innerHTML = message ? message : "";
@@ -664,12 +666,31 @@ var MTE = function(elem, o) {
         }
     };
 
+    // `tidy` method for `Editor` library
+    editor.tidy = function(b, v, a, force_tidy) {
+        a = is_set(a) ? a : b;
+        var s = _SELECTION(), end,
+            n_B = b.indexOf('\n') === -1 && s.before.match(/\n$/),
+            n_A = a.indexOf('\n') === -1 && s.after.match(/^\n/),
+            clean_B = n_B ? s.before : trim_(s.before),
+            clean_V = trim(s.value),
+            clean_A = n_A ? s.after : _trim(s.after),
+            s_B = clean_B.length && !n_B ? b : "",
+            s_A = clean_A.length && !n_A ? a : "";
+        if (s.value.length && !force_tidy && is_function(v)) return v(s);
+        _AREA.value = clean_B + s_B + clean_V + s_A + clean_A;
+        end = clean_B.length + s_B.length;
+        _SELECT(end, end + clean_V.length);
+        if (is_function(v)) v(_SELECTION());
+    };
+
+    // `toggle` method for `Editor` library
     editor.toggle = function(open, close, callback, placeholder) {
         var s = _SELECTION();
         if (s.before.slice(-open.length) != open && s.after.slice(0, close.length) != close) {
-            _WRAP(open, close, (s.value.length === 0 && placeholder ? function() {
-                _REPLACE(/^.*$/, placeholder === true ? opt.placeholders.text : placeholder);
-            } : 1));
+            _WRAP(open, close, !s.value.length && placeholder ? function() {
+                _REPLACE(/^/, placeholder === true ? opt.placeholders.text : placeholder);
+            } : 1);
         } else {
             var clean_B = s.before.slice(-open.length) == open ? s.before.slice(0, -open.length) : s.before,
                 clean_A = s.after.slice(0, close.length) == close ? s.after.slice(close.length) : s.after;
@@ -679,39 +700,54 @@ var MTE = function(elem, o) {
         if (is_function(callback)) callback();
     };
 
-    var _TOGGLE = editor.toggle, T = 0, btn = opt.buttons;
+    var  T = 0, btn = opt.buttons,
+        _TIDY = editor.tidy,
+        _TOGGLE = editor.toggle;
 
     var toolbars = {
         'bold': {
             title: btn.bold,
             click: function() {
                 var strong = opt.STRONG;
-                _TOGGLE(strong, strong, 1, true);
+                _TIDY(' ', function() {
+                    _TOGGLE(strong, strong, 1, true);
+                });
             }
         },
         'italic': {
             title: btn.italic,
             click: function() {
                 var em = opt.EM;
-                _TOGGLE(em, em, 1, true);
+                _TIDY(' ', function() {
+                    _TOGGLE(em, em, 1, true);
+                });
             }
         },
         'code': {
             title: btn.code,
             click: function() {
-                var v = _SELECTION().value,
+                var s = _SELECTION(),
+                    match = '(\\t| {4})',
+                    is_block = s.before.match(new RegExp('(^|\\n' + match + '?)$')),
                     code = opt.CODE,
                     pre = opt.PRE;
-                if (v.indexOf('\n') !== -1 && v.length > 0) {
+                if (is_block) {
                     if (pre.indexOf('%s') === -1) {
-                        var match = '(' + re_PRE + '|\\t| {4})';
-                        editor[v.match(new RegExp('^' + match)) ? 'outdent' : 'indent'](pre);
+                        _TIDY('\n\n', function() {
+                            editor[s.value.match(new RegExp('^' + match)) ? 'outdent' : 'indent'](pre, !s.value.length ? function() {
+                                _REPLACE(/^/, opt.placeholders.text);
+                            } : 1);
+                        }, '\n\n', true);
                     } else {
-                        var wrap = pre.split('%s');
-                        _TOGGLE(wrap[0], wrap[1] || wrap[0]);
+                        _TIDY('\n\n', function() {
+                            var wrap = pre.split('%s');
+                            _TOGGLE(wrap[0], (wrap[1] || wrap[0]), 1, true);
+                        });
                     }
                 } else {
-                    _TOGGLE(code, code, 1, true);
+                    _TIDY(' ', function() {
+                        _TOGGLE(code, code, 1, true);
+                    });
                 }
             }
         },
@@ -719,21 +755,21 @@ var MTE = function(elem, o) {
             title: btn.quote,
             click: function() {
                 var s = _SELECTION(),
+                    quote = opt.BLOCKQUOTE,
                     clean_B = trim_(s.before),
                     clean_V = trim(s.value),
                     clean_A = _trim(s.after),
-                    s_B = clean_B.length > 0 ? '\n\n' : "",
+                    s_B = clean_B.length ? '\n\n' : "",
                     placeholder = opt.placeholders.text, end;
                 if (clean_V == placeholder) {
-                    _SELECT(s.start, s.end);
+                    _SELECT();
                 } else {
-                    if (clean_V.length > 0) {
-                        editor[clean_V[0] == '>' ? 'outdent' : 'indent']('> ');
-                    } else {
-                        _AREA.value = clean_B + s_B + '> ' + placeholder + '\n\n' + clean_A;
-                        end = clean_B.length + s_B.length + 2;
-                        _SELECT(end, end + placeholder.length, _UPDATE_HISTORY);
+                    if (!s.before.match(new RegExp(re_BLOCKQUOTE + '$'))) {
+                        _TIDY('\n\n', 1, '\n\n', true);
                     }
+                    editor[clean_V.match(new RegExp('^' + re_BLOCKQUOTE)) ? 'outdent' : 'indent'](quote, !s.value.length ? function() {
+                        _REPLACE(/^/, opt.placeholders.text);
+                    } : 1);
                 }
             }
         },
@@ -747,7 +783,7 @@ var MTE = function(elem, o) {
                     clean_A = _trim(s.after.replace(/^( #+|\n+[-=]+)/g, "")),
                     s_B = clean_B.length > 0 ? '\n\n' : "", end;
                 T = T < h.length - 1 ? T + 1 : 0;
-                if (s.value.length > 0) {
+                if (s.value.length) {
                     if (T > 0 && T < 3) {
                         _AREA.value = clean_B + s_B + clean_V + '\n' + clean_V.replace(/./g, h[T]) + '\n\n' + clean_A;
                         end = clean_B.length + s_B.length;
@@ -776,9 +812,11 @@ var MTE = function(elem, o) {
                     url = r;
                     base.prompt(opt.prompts.link_title_title, opt.prompts.link_title, false, function(r) {
                         title = r.replace(/'/g, '&apos;').replace(/"/g, '&quot;');
-                        _WRAP('[', '](' + url + (title !== "" ? ' \"' + title + '\"' : "") + ')', (s.value.length === 0 ? function() {
-                            _REPLACE(/^/, placeholder);
-                        } : 1));
+                        _TIDY(' ', function() {
+                            _WRAP('[', '](' + url + (title !== "" ? ' \"' + title + '\"' : "") + ')', !s.value.length ? function() {
+                                _REPLACE(/^/, placeholder);
+                            } : 1);
+                        });
                         opt.update(e, base);
                     });
                 });
@@ -788,22 +826,19 @@ var MTE = function(elem, o) {
             title: btn.image,
             click: function(e) {
                 base.prompt(opt.prompts.image_url_title, opt.prompts.image_url, true, function(r) {
-                    var s = _SELECTION(),
-                        clean_B = trim_(s.before),
-                        clean_A = _trim(s.after),
-                        s_B = clean_B.length > 0 ? '\n\n' : "",
-                        alt = decodeURIComponent(
-                            r.substring(
-                                r.lastIndexOf('/') + 1, r.lastIndexOf('.')
-                            ).replace(/[-+._]+/g, ' ')
-                        ).toLowerCase().replace(/(?:^|\s)\S/g, function(a) {
-                            return a.toUpperCase();
+                    _TIDY('\n\n', function() {
+                        var s = _SELECTION(),
+                            alt = trim(s.value.length ? s.value : decodeURIComponent(
+                                r.split('/').pop().replace(/\..*$/, "").replace(/[-+._]+/g, ' ')
+                            ).toLowerCase().replace(/(?:^|\s)\S/g, function(a) {
+                                return a.toUpperCase();
+                            }));
+                        if (!alt.length) alt = opt.placeholders.image_alt;
+                        _INSERT('![' + alt + '](' + r + ')', function() {
+                            _SELECT(_SELECTION().end + 2, _UPDATE_HISTORY);
                         });
-                    alt = alt.indexOf('/') === -1 && r.indexOf('.') !== -1 ? alt : opt.placeholders.image_alt;
-                    _AREA.value = clean_B + s_B + '![' + alt + '](' + r + ')\n\n' + clean_A;
-                    _SELECT(clean_B.length + s_B.length + 2 + alt.length + 2 + r.length + 3, function() {
-                        opt.update(e, base), _UPDATE_HISTORY();
-                    });
+                    }, '\n\n', true);
+                    opt.update(e, base);
                 });
             }
         },
@@ -813,9 +848,9 @@ var MTE = function(elem, o) {
                 var s = _SELECTION(),
                     placeholder = opt.placeholders.list_ol_text,
                     ol = 0;
-                if (s.value.length > 0) {
+                if (s.value.length) {
                     if (s.value == placeholder) {
-                        _SELECT(s.start, s.end);
+                        _SELECT();
                     } else {
                         if (!s.value.match(new RegExp('^ *' + re_OL))) {
                             _INDENT("", function() {
@@ -830,7 +865,7 @@ var MTE = function(elem, o) {
                         }
                     }
                 } else {
-                    if (!s.before.match(/(^|\n{2,})$/)) {
+                    if (!s.before.match(/(^|\n)$/)) {
                         var match = new RegExp('(^|\\n) *' + re_OL + '(.*?)$'),
                             clean_B = s.before.replace(match, '$1$2');
                         if (!s.before.match(match)) {
@@ -844,13 +879,13 @@ var MTE = function(elem, o) {
                             _SELECT(clean_B.length, _UPDATE_HISTORY);
                         }
                     } else {
-                        var s_B = s.before.length > 0 ? '\n\n' : "",
-                            OL = ' ' + opt.OL.replace(/%d/g, 1),
-                            clean_B = trim_(s.before),
-                            end = clean_B.length + s_B.length;
-                        placeholder = OL + placeholder;
-                        _AREA.value = clean_B + s_B + placeholder + s.after;
-                        _SELECT(end + OL.length, end + placeholder.length, _UPDATE_HISTORY);
+                        var OL = ' ' + opt.OL.replace(/%d/g, 1);
+                        _TIDY('\n\n', function() {
+                            _INSERT(OL + placeholder, function() {
+                                s = _SELECTION();
+                                _SELECT(s.end - placeholder.length, s.end, _UPDATE_HISTORY);
+                            });
+                        }, '\n\n', true);
                     }
                 }
             }
@@ -861,15 +896,15 @@ var MTE = function(elem, o) {
                 var s = _SELECTION(),
                     placeholder = opt.placeholders.list_ul_text,
                     UL = ' ' + opt.UL;
-                if (s.value.length > 0) {
+                if (s.value.length) {
                     if (s.value == placeholder) {
-                        _SELECT(s.start, s.end);
+                        _SELECT();
                     } else {
                         _REPLACE(new RegExp('(^|\\n) *' + re_OL + ' *', 'g'), '$1', noop);
                         editor[s.value.match(new RegExp('^ *' + re_UL)) ? 'outdent' : 'indent'](UL);
                     }
                 } else {
-                    if (!s.before.match(/(^|\n{2,})$/)) {
+                    if (!s.before.match(/(^|\n)$/)) {
                         var match = new RegExp('(^|\\n) *' + re_UL + '(.*?)$'),
                             clean_B = s.before.replace(match, '$1$2');
                         if (!s.before.match(match)) {
@@ -881,12 +916,12 @@ var MTE = function(elem, o) {
                             _SELECT(clean_B.length, _UPDATE_HISTORY);
                         }
                     } else {
-                        var s_B = s.before.length > 0 ? '\n\n' : "",
-                            clean_B = trim_(s.before),
-                            end = clean_B.length + s_B.length;
-                        placeholder = UL + placeholder;
-                        _AREA.value = clean_B + s_B + placeholder + s.after;
-                        _SELECT(end + UL.length, end + placeholder.length, _UPDATE_HISTORY);
+                        _TIDY('\n\n', function() {
+                            _INSERT(UL + placeholder, function() {
+                                s = _SELECTION();
+                                _SELECT(s.end - placeholder.length, s.end, _UPDATE_HISTORY);
+                            });
+                        }, '\n\n', true);
                     }
                 }
             }
@@ -894,12 +929,11 @@ var MTE = function(elem, o) {
         'ellipsis-h': {
             title: btn.rule,
             click: function() {
-                var s = _SELECTION(),
-                    clean_B = trim_(s.before),
-                    clean_A = _trim(s.after),
-                    s_B = clean_B.length > 0 ? '\n\n' : "";
-                _AREA.value = clean_B + s_B + opt.HR + '\n\n' + clean_A;
-                _SELECT(clean_B.length + s_B.length + opt.HR.length + 2, _UPDATE_HISTORY);
+                _TIDY('\n\n', function() {
+                    _INSERT(opt.HR, function() {
+                        _SELECT(_SELECTION().end + 2, _UPDATE_HISTORY);
+                    });
+                }, '\n\n', true);
             }
         },
         'undo': {
@@ -1025,7 +1059,7 @@ var MTE = function(elem, o) {
 
         // `Shift + Tab` to "outdent"
         if (shift && tab) {
-            _OUTDENT('( *' + re_OL + '| *' + re_UL + '|> *|' + re_TAB + ')', 1, true);
+            _OUTDENT('( *' + re_OL + '| *' + re_UL + '| *' + re_BLOCKQUOTE + '|' + re_TAB + ')', 1, true);
             return false;
         }
 
@@ -1105,8 +1139,8 @@ var MTE = function(elem, o) {
                 return false;
             }
 
-            // `Ctrl + 1` for "ordered list"
-            if (ctrl && k == 49) {
+            // `Ctrl + +` for "ordered list"
+            if (ctrl && k == 61) {
                 toolbars['list-ol'].click();
                 return false;
             }
@@ -1134,10 +1168,10 @@ var MTE = function(elem, o) {
         if (k == 13) {
 
             // `Alt + Enter` for creating carriage return arrow
-            if (alt && sv.length === 0) return _INSERT(_u21B5), false;
+            if (alt && !sv.length) return _INSERT(_u21B5), false;
 
             // Automatic list (+blockquote) increment
-            var listItems = new RegExp('(?:^|\\n)( *)(' + re_OL + '|' + re_UL + '|> )( *)(.*?)$');
+            var listItems = new RegExp('(?:^|\\n)( *)(' + re_OL + '|' + re_UL + '|(?:' + re_BLOCKQUOTE + ')+)( *)(.*?)$');
             if (sb.match(listItems)) {
                 var take = listItems.exec(sb),
                     list = new RegExp(re_OL).test(take[2]) ? opt.OL.replace(/%d/g, (parseInt(take[2], 10) + 1)) : take[2]; // `<ol>` or `<ul>` ?
@@ -1199,7 +1233,7 @@ var MTE = function(elem, o) {
             '.': _u00B7
         };
 
-        if (sv.length > 0) {
+        if (sv.length) {
 
             if (alt) {
 
