@@ -783,23 +783,23 @@ var MTE = function(elem, o) {
                     clean_B = trim_(s.before.replace(/#+ $/, "")),
                     clean_V = trim(s.value.replace(/#+ | #+|\n+[-=]+/g, "").replace(/\n+/g, ' ')),
                     clean_A = _trim(s.after.replace(/^( #+|\n+[-=]+)/g, "")),
-                    s_B = clean_B.length > 0 ? '\n\n' : "", end;
+                    s_B = clean_B.length ? '\n\n' : "",
+                    s_A = clean_A.length ? '\n\n' : "", end;
                 T = T < h.length - 1 ? T + 1 : 0;
                 if (s.value.length) {
                     if (T > 0 && T < 3) {
-                        _AREA.value = clean_B + s_B + clean_V + '\n' + clean_V.replace(/./g, h[T]) + '\n\n' + clean_A;
+                        _AREA.value = clean_B + s_B + clean_V + '\n' + clean_V.replace(/./g, h[T]) + s_A + clean_A;
                         end = clean_B.length + s_B.length;
-                        _SELECT(end, end + clean_V.length, _UPDATE_HISTORY);
                     } else {
                         var space = T > 0 ? ' ' : "";
-                        _AREA.value = clean_B + s_B + h[T] + space + clean_V + (opt.closeATXHeader ? space + h[T] : "") + (clean_A.length ? '\n\n' : "") + clean_A;
+                        _AREA.value = clean_B + s_B + h[T] + space + clean_V + (opt.closeATXHeader ? space + h[T] : "") + s_A + clean_A;
                         end = clean_B.length + s_B.length + h[T].length + space.length;
-                        _SELECT(end, end + clean_V.length, _UPDATE_HISTORY);
                     }
+                    _SELECT(end, end + clean_V.length, _UPDATE_HISTORY);
                 } else {
                     var placeholder = opt.placeholders.heading_text;
                     T = 1;
-                    _AREA.value = clean_B + s_B + placeholder + '\n' + placeholder.replace(/./g, h[T]) + (clean_A.length ? '\n\n' : "") + clean_A;
+                    _AREA.value = clean_B + s_B + placeholder + '\n' + placeholder.replace(/./g, h[T]) + s_A + clean_A;
                     end = clean_B.length + s_B.length;
                     _SELECT(end, end + placeholder.length, _UPDATE_HISTORY);
                 }
