@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.4.1
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.4.2
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -247,6 +247,7 @@ var MTE = function(elem, o) {
     var re_UL = escape(opt.UL).replace(/\\[-+*]/g, '[-+*]'),
         re_OL = escape(opt.OL).replace(/%d/g, '\\d+'),
         re_TAB = escape(opt.tabSize),
+        re_PRE = escape(opt.PRE),
         re_BLOCKQUOTE = escape(opt.BLOCKQUOTE);
 
     // Base Shortcut
@@ -723,34 +724,6 @@ var MTE = function(elem, o) {
                 });
             }
         },
-        'code': {
-            title: btn.code,
-            click: function() {
-                var s = _SELECTION(),
-                    match = '(\\t| {4})',
-                    is_block = s.before.match(new RegExp('(^|\\n' + match + '?)$')),
-                    code = opt.CODE,
-                    pre = opt.PRE;
-                if (is_block) {
-                    if (pre.indexOf('%s') === -1) {
-                        _TIDY('\n\n', function() {
-                            editor[s.value.match(new RegExp('^' + match)) ? 'outdent' : 'indent'](pre, !s.value.length ? function() {
-                                _REPLACE(/^/, opt.placeholders.text);
-                            } : 1);
-                        }, '\n\n', true);
-                    } else {
-                        _TIDY('\n\n', function() {
-                            var wrap = pre.split('%s');
-                            _TOGGLE(wrap[0], (wrap[1] || wrap[0]), 1, true);
-                        });
-                    }
-                } else {
-                    _TIDY(' ', function() {
-                        _TOGGLE(code, code, 1, true);
-                    });
-                }
-            }
-        },
         'quote-right': {
             title: btn.quote,
             click: function() {
@@ -773,6 +746,35 @@ var MTE = function(elem, o) {
                 }
             }
         },
+        'code': {
+            title: btn.code,
+            click: function() {
+                var s = _SELECTION(),
+                    match = '(' + re_PRE + '|\\t| {4})',
+                    is_block = s.before.match(new RegExp('(^|\\n)' + match + '?$')),
+                    code = opt.CODE,
+                    pre = opt.PRE;
+                if (is_block) {
+                    if (pre.indexOf('%s') === -1) {
+                        _TIDY('\n\n', function() {
+                            editor[s.value.match(new RegExp('^' + match)) ? 'outdent' : 'indent'](pre, !s.value.length ? function() {
+                                _REPLACE(/^/, opt.placeholders.text);
+                            } : 1);
+                        }, '\n\n', true);
+                    } else {
+                        var wrap = pre.split('%s');
+                        _TIDY('\n\n', function() {
+                            s = _SELECTION();
+                            _TOGGLE(wrap[0], (wrap[1] || wrap[0]), 1, true);
+                        }, '\n\n', !s.before.match(new RegExp(escape(wrap[0]) + '$')));
+                    }
+                } else {
+                    _TIDY(' ', function() {
+                        _TOGGLE(code, code, 1, true);
+                    });
+                }
+            }
+        },
         'header': {
             title: btn.heading,
             click: function() {
@@ -790,14 +792,14 @@ var MTE = function(elem, o) {
                         _SELECT(end, end + clean_V.length, _UPDATE_HISTORY);
                     } else {
                         var space = T > 0 ? ' ' : "";
-                        _AREA.value = clean_B + s_B + h[T] + space + clean_V + (opt.closeATXHeader ? space + h[T] : "") + '\n\n' + clean_A;
+                        _AREA.value = clean_B + s_B + h[T] + space + clean_V + (opt.closeATXHeader ? space + h[T] : "") + (clean_A.length ? '\n\n' : "") + clean_A;
                         end = clean_B.length + s_B.length + h[T].length + space.length;
                         _SELECT(end, end + clean_V.length, _UPDATE_HISTORY);
                     }
                 } else {
                     var placeholder = opt.placeholders.heading_text;
                     T = 1;
-                    _AREA.value = clean_B + s_B + placeholder + '\n' + placeholder.replace(/./g, h[T]) + '\n\n' + clean_A;
+                    _AREA.value = clean_B + s_B + placeholder + '\n' + placeholder.replace(/./g, h[T]) + (clean_A.length ? '\n\n' : "") + clean_A;
                     end = clean_B.length + s_B.length;
                     _SELECT(end, end + placeholder.length, _UPDATE_HISTORY);
                 }
@@ -835,7 +837,9 @@ var MTE = function(elem, o) {
                             }));
                         if (!alt.length) alt = opt.placeholders.image_alt;
                         _INSERT('![' + alt + '](' + r + ')', function() {
-                            _SELECT(_SELECTION().end + 2, _UPDATE_HISTORY);
+                            s = _SELECTION();
+                            if (!s.after.length) _AREA.value += '\n\n';
+                            _SELECT(s.end + 2, _UPDATE_HISTORY);
                         });
                     }, '\n\n', true);
                     opt.update(e, base);
@@ -931,7 +935,9 @@ var MTE = function(elem, o) {
             click: function() {
                 _TIDY('\n\n', function() {
                     _INSERT(opt.HR, function() {
-                        _SELECT(_SELECTION().end + 2, _UPDATE_HISTORY);
+                        var s = _SELECTION();
+                        if (!s.after.length) _AREA.value += '\n\n';
+                        _SELECT(s.end + 2, _UPDATE_HISTORY);
                     });
                 }, '\n\n', true);
             }
