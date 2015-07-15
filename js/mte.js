@@ -330,7 +330,9 @@ var MTE = function(elem, o) {
                 }
             });
         }, 10);
-        if (is_function(callback)) callback(overlay, modal);
+        // `callback(overlay, modal, header, content, footer)`
+        var ch = modal.children;
+        if (is_function(callback)) callback(overlay, modal, ch[0], ch[1], ch[2]);
     };
 
     // Base Drop
@@ -379,7 +381,7 @@ var MTE = function(elem, o) {
 
     // Custom Prompt Modal
     base.prompt = function(title, value, required, callback, offset) {
-        base.modal('prompt', function(o, m) {
+        base.modal('prompt', function(o, m, h, c, f) {
             var success = function(value) {
                 if (is_function(callback)) {
                     base.close();
@@ -432,11 +434,11 @@ var MTE = function(elem, o) {
                 if (k == 37 || k == 38) return OK.focus(), false;
                 if (k == 40) return false;
             });
-            m.children[0].innerHTML = title ? title : "";
-            m.children[1].appendChild(input);
-            m.children[2].appendChild(OK);
-            m.children[2].appendChild(doc.createTextNode(' '));
-            m.children[2].appendChild(CANCEL);
+            h.innerHTML = title ? title : "";
+            c.appendChild(input);
+            f.appendChild(OK);
+            f.appendChild(doc.createTextNode(' '));
+            f.appendChild(CANCEL);
             win.setTimeout(function() {
                 input.select();
             }, 10);
@@ -445,7 +447,7 @@ var MTE = function(elem, o) {
 
     // Custom Alert Modal
     base.alert = function(title, message, callback, offset) {
-        base.modal('alert', function(o, m) {
+        base.modal('alert', function(o, m, h, c, f) {
             var OK = doc.createElement('button');
                 OK.innerHTML = opt.buttons.ok;
             addEvent(OK, "click", function() {
@@ -460,9 +462,9 @@ var MTE = function(elem, o) {
             addEvent(OK, "keydown", function(e) {
                 if (e.keyCode == 27) return base.close(true), false;
             });
-            m.children[0].innerHTML = title ? title : "";
-            m.children[1].innerHTML = message ? message : "";
-            m.children[2].appendChild(OK);
+            h.innerHTML = title ? title : "";
+            c.innerHTML = message ? message : "";
+            f.appendChild(OK);
             win.setTimeout(function() {
                 OK.focus();
             }, 10);
@@ -471,7 +473,7 @@ var MTE = function(elem, o) {
 
     // Custom Confirm Modal
     base.confirm = function(title, message, callback, offset) {
-        base.modal('confirm', function(o, m) {
+        base.modal('confirm', function(o, m, h, c, f) {
             var OK = doc.createElement('button');
                 OK.innerHTML = opt.buttons.ok;
             addEvent(OK, "click", function() {
@@ -513,11 +515,11 @@ var MTE = function(elem, o) {
                 if (k == 37 || k == 38) return OK.focus(), false;
                 if (k == 40) return false;
             });
-            m.children[0].innerHTML = title ? title : "";
-            m.children[1].innerHTML = message ? message : "";
-            m.children[2].appendChild(OK);
-            m.children[2].appendChild(doc.createTextNode(' '));
-            m.children[2].appendChild(CANCEL);
+            h.innerHTML = title ? title : "";
+            c.innerHTML = message ? message : "";
+            f.appendChild(OK);
+            f.appendChild(doc.createTextNode(' '));
+            f.appendChild(CANCEL);
             win.setTimeout(function() {
                 CANCEL.focus();
             }, 10);

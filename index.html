@@ -100,7 +100,7 @@ List Item</textarea>
     myEditor.button('pencil', {
         title: 'Example Custom Modal',
         click: function(e, base) {
-            base.modal('my-modal', function(overlay, modal) {
+            base.modal('my-modal', function(overlay, modal, header, content, footer) {
                 var btn = document.createElement('button');
                 btn.innerHTML = 'Save';
                 btn.onclick = function() {
@@ -108,9 +108,9 @@ List Item</textarea>
                     base.close(true);
                     return false;
                 };
-                modal.children[0].innerHTML = 'Test Modal'; // Header
-                modal.children[1].innerHTML = '<img src="http://lorempixel.com/600/200/animals">'; // Content
-                modal.children[2].appendChild(btn); // Footer
+                header.innerHTML = 'Test Modal'; // Header
+                content.innerHTML = '<img src="http://lorempixel.com/600/200/animals">'; // Content
+                footer.appendChild(btn); // Footer
             });
         }
     });
