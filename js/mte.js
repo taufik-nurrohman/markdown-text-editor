@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.4.2
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.4.3
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -1049,12 +1049,12 @@ var MTE = function(elem, o) {
         }
 
         // Auto close for `'`
-        if (!shift && k == 222 && !esc) {
+        if (!shift && k == 222 && !esc && !sb.match(/\w$/)) {
             return insert("'" + sv + "'", s);
         }
 
         // Auto close for ```
-        if (!shift && k == 192 && !esc) {
+        if (!shift && k == 192 && !esc && !sb.match(/\w$/)) {
             return insert('`' + sv + '`', s);
         }
 
