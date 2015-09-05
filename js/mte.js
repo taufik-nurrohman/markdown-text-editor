@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.4.3
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.4.4
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -254,6 +254,14 @@ var MTE = function(elem, o) {
     base.shortcuts = [];
     base.shortcut = function(code, callback) {
         base.shortcuts[code.toLowerCase()] = callback;
+        base.shortcuts = (function() {
+            var _in = Object.keys(base.shortcuts).sort().reverse(),
+                _out = {};
+            for (var i = 0, len = _in.length; i < len; ++i) {
+                _out[_in[i]] = base.shortcuts[_in[i]];
+            }
+            return _out;
+        })();
     };
 
     // Base Event Listener
