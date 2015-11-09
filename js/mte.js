@@ -1075,7 +1075,7 @@ var MTE = function(elem, o) {
 
         // `Shift + Tab` to "outdent"
         if (shift && tab) {
-            _OUTDENT('( *' + re_OL + '| *' + re_UL + '| *' + re_BLOCKQUOTE + '|' + re_TAB + ')', 1, true);
+            _OUTDENT(opt.toolbar ? '( *' + re_OL + '| *' + re_UL + '| *' + re_BLOCKQUOTE + '|' + re_TAB + ')' : re_TAB, 1, true);
             return false;
         }
 
