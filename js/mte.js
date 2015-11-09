@@ -1,6 +1,6 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.4.4
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.4.5
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
  * Licensed under the MIT license.
@@ -172,7 +172,7 @@ var MTE = function(elem, o) {
         if (fn === null) {
             return elem[event] = null;
         }
-        if(is_function(elem[event])) {
+        if (is_function(elem[event])) {
             fn = (function(fn_1, fn_2) {
                 return function() {
                     return fn_1.apply(this, arguments), fn_2.apply(this, arguments);
@@ -1105,7 +1105,7 @@ var MTE = function(elem, o) {
             return false;
         }
 
-        if (opt.shortcut) {
+        if (opt.toolbar && opt.shortcut) {
 
             // `Ctrl + B` for "bold"
             if (ctrl && k == 66) {
@@ -1171,7 +1171,7 @@ var MTE = function(elem, o) {
 
         // Add a space at the beginning of the list item when user starts
         // pressing the space bar after typing `1.` or `*` or `-` or `+`
-        if (k == 32) {
+        if (opt.toolbar && k == 32) {
             var match = '(^|\\n)(' + trim_(re_OL) + '|' + trim_(re_UL) + ')';
             if (sb.match(new RegExp(match + '$'))) {
                 _AREA.value = sb.replace(new RegExp(match + '$'), '$1 $2 ') + sv + sa;
@@ -1187,13 +1187,15 @@ var MTE = function(elem, o) {
             if (alt && !sv.length) return _INSERT(_u21B5), false;
 
             // Automatic list (+blockquote) increment
-            var listItems = new RegExp('(?:^|\\n)( *)(' + re_OL + '|' + re_UL + '|(?:' + re_BLOCKQUOTE + ')+)( *)(.*?)$');
-            if (sb.match(listItems)) {
-                var take = listItems.exec(sb),
-                    list = new RegExp(re_OL).test(take[2]) ? opt.OL.replace(/%d/g, (parseInt(take[2], 10) + 1)) : take[2]; // `<ol>` or `<ul>` ?
-                _INSERT('\n' + take[1] + list + take[3], 1);
-                base.scroll();
-                return false;
+            if (opt.toolbar) {
+                var match = new RegExp('(?:^|\\n)( *)(' + re_OL + '|' + re_UL + '|(?:' + re_BLOCKQUOTE + ')+)( *)(.*?)$');
+                if (sb.match(match)) {
+                    var take = match.exec(sb),
+                        list = new RegExp(re_OL).test(take[2]) ? opt.OL.replace(/%d/g, (parseInt(take[2], 10) + 1)) : take[2]; // `<ol>` or `<ul>` ?
+                    _INSERT('\n' + take[1] + list + take[3], 1);
+                    base.scroll();
+                    return false;
+                }
             }
 
             // Automatic indentation
@@ -1331,14 +1333,16 @@ var MTE = function(elem, o) {
             if (k == 8) {
 
                 // Remove empty list item (+blockquote) quickly
-                var match = ' *(' + re_OL + '|' + re_UL + '|> )';
-                if(sb.match(new RegExp(match + '$'))) {
-                    _OUTDENT(match, 1, true);
-                    return false;
+                if (opt.toolbar) {
+                    var match = ' *(' + re_OL + '|' + re_UL + '|> )';
+                    if (sb.match(new RegExp(match + '$'))) {
+                        _OUTDENT(match, 1, true);
+                        return false;
+                    }
                 }
 
                 // Remove indentation quickly
-                if(sb.match(new RegExp(re_TAB + '$'))) {
+                if (sb.match(new RegExp(re_TAB + '$'))) {
                     _OUTDENT(opt.tabSize);
                     return false;
                 }
