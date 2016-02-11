@@ -38,7 +38,7 @@
   display:block;
   float:left;
   width:0;
-  height:20px;
+  height:1.4285714285714286em;
   border-right:1px solid;
   margin:0 4px 4px 0;
 }
@@ -122,12 +122,12 @@
   width:auto;
   margin:0;
 }
-.custom-modal-action {text-align:center}
-.custom-modal-action button {
+.custom-modal-footer {text-align:center}
+.custom-modal-footer button {
   padding:2px 6px;
   cursor:pointer;
 }
-.custom-modal-action button::-moz-focus-inner {
+.custom-modal-footer button::-moz-focus-inner {
   margin:0;
   padding:0;
   border:none;

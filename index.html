@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <title>Demo</title>
-    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
     <link href="css/demo.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
     <style>
@@ -42,7 +42,7 @@ List Item
 List Item</textarea>
     </div>
 
-    <script src="js/library.js"></script>
+    <script src="js/editor.min.js"></script>
     <script src="js/mte.js"></script>
     <script>
 
@@ -51,7 +51,10 @@ List Item</textarea>
         tabSize: '    ',
         shortcut: true,
         keydown: function(e, base) {
-            console.log('Updated! (keydown:' + e.keyCode + ')');
+            console.log('Updated! (keydown:' + base.grip.key(e) + ')');
+        },
+        update: function() {
+            console.log('Updated!');
         },
         click: function(e, base, type) {
             console.log('Updated! (click:' + type + ')');
@@ -105,7 +108,7 @@ List Item</textarea>
                 btn.innerHTML = 'Save';
                 btn.onclick = function() {
                     alert('Saved!');
-                    base.close(true);
+                    base.exit(true);
                     return false;
                 };
                 header.innerHTML = 'Test Modal'; // Header
@@ -129,7 +132,7 @@ List Item</textarea>
                     color.style.backgroundColor = colors[i];
                     color.onclick = function() {
                         base.grip.wrap('<span style="color:' + this.title + ';">', '</span>');
-                        base.close(true);
+                        base.exit(true);
                     };
                     drop.appendChild(color);
                 }
@@ -139,6 +142,18 @@ List Item</textarea>
 
     // Toolbar Separator
     myEditor.separator({position: 4});
+
+    // Shortcut API
+    myEditor.shortcut('ctrl+f', function() {
+        return myEditor.prompt('Search', "", true, function(v) {
+            var start = myEditor.grip.area.value.toLowerCase().indexOf(v.toLowerCase());
+            if (start !== -1) {
+                myEditor.grip.select(start, start + v.length);
+            } else {
+                myEditor.alert('Not Found', 'Can&rdquo;t find &ldquo;' + v + '&rdquo;.');
+            }
+        }), false;
+    });
 
     </script>
 

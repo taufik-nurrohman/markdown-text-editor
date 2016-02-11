@@ -21,7 +21,7 @@ Requires
 Basic Usage
 -----------
 
-Place the icon fonts and the CSS file in the head:
+Put icon fonts and CSS files in the `<head>`:
 
 ~~~ .html
 <link href="css/font-awesome.css" rel="stylesheet">
@@ -34,11 +34,11 @@ Create a `<textarea>` element in the body:
 <textarea></textarea>
 ~~~
 
-Place the library and the editor plugin after the `<textarea>` element then execute the plugin:
+Put editor and **MTE** plugin after the `<textarea>` element then execute the plugin:
 
 ~~~ .html
-<script src="js/library.js"></script>
-<script src="js/mte.js"></script>
+<script src="js/editor.min.js"></script>
+<script src="js/mte.min.js"></script>
 <script>
 var myEditor = new MTE(document.getElementsByTagName('textarea')[0]);
 </script>
