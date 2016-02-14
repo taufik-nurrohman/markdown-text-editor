@@ -1221,7 +1221,7 @@ var MTE = function(elem, o) {
                         _SELECT(ss + (indent + opt.tabSize).length + 1, true);
                     }), base.scroll(), false;
                 }
-                if (sb.match(new RegExp(re_TAB + '$'))) {
+                if (sb.match(new RegExp(re_TAB + '.*?$'))) {
                     return _INSERT('\n' + indent), base.scroll(), false;
                 }
             }
