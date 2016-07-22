@@ -8,15 +8,15 @@ As mentioned in the title above.
 Demo
 ----
 
-![b2d6d8be-af36-11e3-8b6f-9d0cf3518fb7](https://f.cloud.github.com/assets/1669261/2492943/8db3fa4e-b26a-11e3-8d5e-823c8d594b64.png)
+![markdown-text-editor](https://f.cloud.github.com/assets/1669261/2492943/8db3fa4e-b26a-11e3-8d5e-823c8d594b64.png)
 
-&rarr; http://rawgit.com/tovic/markdown-text-editor/master/index.html
+→ https://rawgit.com/tovic/markdown-text-editor/master/index.html
 
 Requires
 --------
 
  * [This](https://github.com/tovic/simple-text-editor-library "Simple Text Editor Library") text editor library
- * Icon fonts from [Font Awesome](https://fortawesome.github.io/Font-Awesome/icons "Font Awesome Icons")
+ * Icon fonts from [Font Awesome](https://github.com/FortAwesome/Font-Awesome "Font Awesome")
 
 Basic Usage
 -----------
@@ -24,8 +24,8 @@ Basic Usage
 Put icon fonts and CSS files in the `<head>`:
 
 ~~~ .html
-<link href="css/font-awesome.css" rel="stylesheet">
-<link href="css/style.css" rel="stylesheet">
+<link href="css/font-awesome.min.css" rel="stylesheet">
+<link href="css/mte.min.css" rel="stylesheet">
 ~~~
 
 Create a `<textarea>` element in the body:

@@ -1,14 +1,14 @@
 /*!
  * ----------------------------------------------------------
- *  MARKDOWN TEXT EDITOR PLUGIN 1.5.1
+ *  MARKDOWN TEXT EDITOR PLUGIN 1.5.2
  * ----------------------------------------------------------
  * Author: Taufik Nurrohman <http://latitudu.com>
- * Licensed under the MIT license.
+ * License: MIT
  *
  * REQUIRES:
  * ==========================================================
  * [1]. https://github.com/tovic/simple-text-editor-library
- * [2]. https://fortawesome.github.io/Font-Awesome/icons
+ * [2]. https://github.com/FortAwesome/Font-Awesome
  * ==========================================================
  * ----------------------------------------------------------
  *
@@ -134,9 +134,10 @@ var MTE = function(elem, o) {
         };
 
     var page = doc.body,
-        overlay = doc.createElement('div'),
-        modal = doc.createElement('div'),
-        drop = doc.createElement('div'),
+        pageParent = doc.documentElement,
+        overlay = $('div'),
+        modal = $('div'),
+        drop = $('div'),
         scroll = 0,
         button = null,
         drag = null,
@@ -144,8 +145,8 @@ var MTE = function(elem, o) {
         y_e = 0,
         x_m = 0,
         y_m = 0,
-        v_w = page.parentNode.offsetWidth,
-        v_h = win.innerHeight > page.parentNode.offsetHeight ? win.innerHeight : page.parentNode.offsetHeight,
+        v_w = _size(pageParent).w,
+        v_h = Math.max(win.innerHeight, _size(pageParent).h),
         NN = '\n\n',
         SS = ' ',
 
@@ -247,8 +248,26 @@ var MTE = function(elem, o) {
         return node.parentNode;
     }
 
+    function _size(el) {
+        return {
+            w: el.offsetWidth,
+            h: el.offsetHeight
+        };
+    }
+
+    function _offset(el) {
+        return {
+            l: el.offsetLeft,
+            t: el.offsetTop
+        };
+    }
+
+    function $(el) {
+        return doc.createElement(el);
+    }
+
     var opt = extend(defaults, o),
-        nav = doc.createElement('span');
+        nav = $('span');
 
     // Configuration (original)
     // @see `base.grip.config`
@@ -296,7 +315,7 @@ var MTE = function(elem, o) {
         }
         type = type || 'default';
         offset = offset || {};
-        scroll = page.scrollTop || page.parentNode.scrollTop;
+        scroll = page.scrollTop || pageParent.scrollTop;
         overlay.className = opt.modalOverlayClass.replace(/%s/g, type);
         modal.className = opt.modalClass.replace(/%s/g, type);
         modal.innerHTML = '<div class="' + opt.modalHeaderClass.replace(/%s/g, type) + '"></div><div class="' + opt.modalContentClass.replace(/%s/g, type) + '"></div><div class="' + opt.modalFooterClass.replace(/%s/g, type) + '"></div>';
@@ -309,8 +328,8 @@ var MTE = function(elem, o) {
             page.appendChild(modal);
         }, .1);
         _TIMER(function() {
-            var w = modal.offsetWidth,
-                h = modal.offsetHeight;
+            var w = _size(modal).w,
+                h = _size(modal).h;
             m_s.position = 'absolute';
             m_s.left = fx_left ? offset.left + 'px' : '50%';
             m_s.top = fx_top ? offset.top + 'px' : '50%';
@@ -318,13 +337,13 @@ var MTE = function(elem, o) {
             m_s.marginLeft = (fx_left ? 0 : 0 - (w / 2)) + 'px';
             m_s.marginTop = (fx_top ? 0 : scroll - (h / 2)) + 'px';
             m_s.visibility = "";
-            if (modal.offsetLeft < 0 && !fx_left) {
+            if (_offset(modal).l < 0 && !fx_left) {
                 m_s.left = 0;
                 m_s.marginLeft = 0;
                 fx_left = true;
                 offset.left = 0;
             }
-            if (modal.offsetTop < 0 && !fx_top) {
+            if (_offset(modal).t < 0 && !fx_top) {
                 m_s.top = 0;
                 m_s.marginTop = 0;
                 fx_top = true;
@@ -333,8 +352,8 @@ var MTE = function(elem, o) {
             var handle = modal.children[0];
             addEvent(handle, "mousedown", function() {
                 drag = modal;
-                x_m = x_e - drag.offsetLeft;
-                y_m = y_e - drag.offsetTop;
+                x_m = x_e - _offset(drag).l;
+                y_m = y_e - _offset(drag).t;
                 return false;
             });
             addEvent(page, "mousemove", null);
@@ -372,13 +391,13 @@ var MTE = function(elem, o) {
         }
         if (!offset && button) {
             offset = {
-                left: button.offsetLeft,
-                top: button.offsetTop + button.offsetHeight // drop!
+                left: _offset(button).l,
+                top: _offset(button).t + _size(button).h // drop!
             };
         }
         type = type || 'default';
         offset = offset || {};
-        scroll = page.scrollTop || page.parentNode.scrollTop;
+        scroll = page.scrollTop || pageParent.scrollTop;
         drop.className = opt.dropClass.replace(/%s/g, type);
         var d_s = drop.style,
             fx_left = 'left' in offset,
@@ -388,8 +407,8 @@ var MTE = function(elem, o) {
             page.appendChild(drop);
         }, .1);
         _TIMER(function() {
-            var w = drop.offsetWidth,
-                h = drop.offsetHeight;
+            var w = _size(drop).w,
+                h = _size(drop).h;
             d_s.position = 'absolute';
             d_s.left = fx_left ? offset.left + 'px' : '50%';
             d_s.top = fx_top ? offset.top + 'px' : '50%';
@@ -420,7 +439,7 @@ var MTE = function(elem, o) {
                     base.exit(true);
                 }
             };
-            var input = doc.createElement('input');
+            var input = $('input');
                 input.type = 'text';
                 input.value = value;
             addEvent(input, "keydown", function(e) {
@@ -437,7 +456,7 @@ var MTE = function(elem, o) {
                     }
                 }
             });
-            var OK = doc.createElement('button');
+            var OK = $('button');
                 OK.innerHTML = opt.actions.ok;
             addEvent(OK, "click", function() {
                 if (required) {
@@ -447,7 +466,7 @@ var MTE = function(elem, o) {
                 }
                 return false;
             });
-            var CANCEL = doc.createElement('button');
+            var CANCEL = $('button');
                 CANCEL.innerHTML = opt.actions.cancel;
             addEvent(CANCEL, "click", function() {
                 return base.exit(true), false;
@@ -480,7 +499,7 @@ var MTE = function(elem, o) {
     // Custom Alert Modal
     base.alert = function(title, message, callback, offset) {
         base.modal('alert', function(o, m, h, c, f) {
-            var OK = doc.createElement('button');
+            var OK = $('button');
                 OK.innerHTML = opt.actions.ok;
             addEvent(OK, "click", function() {
                 if (is_function(callback)) {
@@ -506,7 +525,7 @@ var MTE = function(elem, o) {
     // Custom Confirm Modal
     base.confirm = function(title, message, callback, offset) {
         base.modal('confirm', function(o, m, h, c, f) {
-            var OK = doc.createElement('button');
+            var OK = $('button');
                 OK.innerHTML = opt.actions.ok;
             addEvent(OK, "click", function() {
                 if (is_set(callback)) {
@@ -521,7 +540,7 @@ var MTE = function(elem, o) {
                 }
                 return false;
             });
-            var CANCEL = doc.createElement('button');
+            var CANCEL = $('button');
                 CANCEL.innerHTML = opt.actions.cancel;
             addEvent(CANCEL, "click", function() {
                 if (is_set(callback)) {
@@ -574,8 +593,8 @@ var MTE = function(elem, o) {
     };
 
     addEvent(win, "resize", function() {
-        v_w = page.parentNode.offsetWidth;
-        v_h = win.innerHeight > page.parentNode.offsetHeight ? win.innerHeight : page.parentNode.offsetHeight;
+        v_w = _size(pageParent).w;
+        v_h = Math.max(win.innerHeight, _size(pageParent).h);
     });
 
     addEvent(page, "mouseup", function() {
@@ -632,7 +651,7 @@ var MTE = function(elem, o) {
         _AREA.parentNode.insertBefore(nav, opt.toolbarPosition.match(/^after|bottom$/i) ? null : _AREA);
     }
 
-    var release = doc.createElement('a');
+    var release = $('a');
         release.href = '#esc:' + (new Date()).getTime();
         release.style.width = 0;
         release.style.height = 0;
@@ -644,7 +663,7 @@ var MTE = function(elem, o) {
         data = data || {};
         if (data.title === false) return;
         if (!is_object(data.title)) data.title = [data.title];
-        var btn = doc.createElement('a'), pos;
+        var btn = $('a'), pos;
             btn.className = opt.toolbarButtonClass.replace(/%s/g, key);
             btn.setAttribute('dir', data.dir || opt.dir);
             btn.setAttribute('tabindex', -1);
@@ -684,7 +703,7 @@ var MTE = function(elem, o) {
     // Toolbar Button Separator
     base.separator = function(data) {
         data = data || {};
-        var sep = doc.createElement('span'), pos;
+        var sep = $('span'), pos;
             sep.className = opt.toolbarSeparatorClass;
         if (is_object(data.attr)) {
             for (var i in data.attr) {
